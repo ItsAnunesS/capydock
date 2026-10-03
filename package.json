@@ -1,0 +1,47 @@
+{
+  "name": "capydock",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev --host 127.0.0.1 --port 3000",
+    "generate": "nuxt generate",
+    "build": "tauri build",
+    "desktop": "tauri dev",
+    "tauri": "tauri",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck",
+    "cli:install": "node scripts/install-cli.mjs",
+    "test": "cargo test --manifest-path crates/drive-core/Cargo.toml",
+    "test:ui": "vitest run",
+    "format": "prettier --write app tests scripts nuxt.config.ts vitest.config.ts package.json",
+    "format:check": "prettier --check app tests scripts nuxt.config.ts vitest.config.ts package.json",
+    "install:desktop": "node scripts/install-desktop.mjs",
+    "test:browser": "vite --config tests/browser/vite.config.ts",
+    "computers:build": "node scripts/build-computers.mjs"
+  },
+  "dependencies": {
+    "@lucide/vue": "^1.51.0",
+    "@tailwindcss/vite": "^4.1.0",
+    "@tauri-apps/api": "^2.8.0",
+    "@tauri-apps/plugin-dialog": "^2.4.0",
+    "daisyui": "^5.0.0",
+    "nuxt": "^4.0.0",
+    "pdfjs-dist": "^6.3.289",
+    "tailwindcss": "^4.1.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@semantic-release/commit-analyzer": "13.0.1",
+    "@semantic-release/release-notes-generator": "14.1.1",
+    "@tauri-apps/cli": "^2.8.0",
+    "@vue/test-utils": "^2.5.1",
+    "conventional-changelog-conventionalcommits": "10.4.0",
+    "happy-dom": "^20.14.5",
+    "prettier": "^3.9.9",
+    "semver": "7.8.5",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.3",
+    "vue-tsc": "^3.0.0"
+  }
+}

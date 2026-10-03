@@ -1,0 +1,25 @@
+node_modules/
+.nuxt/
+.output/
+dist/
+dist
+src-tauri/gen/
+src-tauri/target/
+target/
+bin/proton-drive
+bin/*.download
+bin/*.previous
+.DS_Store
+test-results/
+playwright-report/
+bin/proton-drive-computers
+
+# Local previews, validation reports and release output
+artifacts/*.png
+artifacts/*.jpg
+artifacts/*validation.json
+artifacts/catalog-benchmark.json
+release-dist/
+.env
+.env.*
+!.env.example

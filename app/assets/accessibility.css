@@ -1,0 +1,325 @@
+/* Shared, measurable foregrounds. Pastels are reserved for surfaces. */
+:root {
+  --ink: #242e2a;
+  --muted-ink: #52625b;
+  --line: #c8d4cd;
+  --accent: #285e4b;
+}
+[data-theme="drive"] {
+  --color-primary: #285e4b;
+  --color-primary-content: #fff;
+  --color-base-content: #242e2a;
+  --color-secondary: #e7f1eb;
+  --color-secondary-content: #285e4b;
+}
+.desktop-shell {
+  color: var(--ink);
+  background: #f7f9f7;
+}
+.brand-capy {
+  display: block;
+  flex: 0 0 auto;
+}
+.brand strong {
+  color: var(--ink);
+}
+:focus-visible {
+  outline: 3px solid #285e4b;
+  outline-offset: 3px;
+}
+#main-content:focus:not(:focus-visible),
+#library-content:focus:not(:focus-visible) {
+  outline: none;
+}
+.skip-link {
+  position: fixed;
+  left: 16px;
+  top: -100px;
+  z-index: 100;
+  padding: 12px 20px;
+  color: white;
+  background: #285e4b;
+  border-radius: 8px;
+}
+.skip-link:focus {
+  top: 12px;
+}
+.desktop-shell .btn {
+  min-height: 40px;
+  height: auto;
+  font-size: 13px;
+}
+.desktop-shell .btn-square {
+  width: 40px;
+  flex-shrink: 0;
+}
+.btn-primary {
+  color: white;
+  background: #285e4b;
+  border-color: #285e4b;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #1b4938;
+  border-color: #1b4938;
+  box-shadow: none;
+}
+.btn-outline,
+.btn-soft {
+  color: #285e4b;
+  border-color: #bdcfc3;
+}
+.btn-outline:hover,
+.btn-soft:hover {
+  background: #e7f1eb;
+  border-color: #285e4b;
+}
+.nav-item.active {
+  color: #24583f;
+  background: #e7f1eb;
+}
+.nav-item,
+.btn-ghost,
+.breadcrumb,
+.filter-tabs button,
+.text-button,
+.library-tabs button,
+.library-location,
+.library-location button,
+.library-pagination,
+.library-table th {
+  color: var(--muted-ink);
+}
+.library-tabs button.active {
+  color: #24583f;
+  border-bottom-color: #285e4b;
+}
+.library-tabs button {
+  min-height: 48px;
+}
+.page-heading p,
+.section-heading p,
+.welcome-copy p,
+.setting-row p,
+.settings-info,
+.connection-detail > p,
+.about-card > p,
+.update-details p,
+.dialog-subtitle,
+.field-label,
+.pair-paths p,
+.pair-meta,
+.pair-state,
+.pair-bottom > span,
+.metric > div > span,
+.metric-value small,
+.metric-empty small,
+.metric-label small,
+.activity-empty p,
+.activity-link,
+.empty-folders > p,
+.empty-footnote,
+.activity-empty h3,
+.account-copy span,
+.workspace-label,
+.app-footer,
+.privacy-card p,
+.privacy-card span,
+.welcome-footnote,
+.hero-caption,
+.sync-note p,
+.library-cache-time,
+.library-footnote,
+.library-note,
+.library-intro p,
+.library-location > span,
+.library-empty p,
+.library-table td,
+.file-name-button small,
+.media-meta,
+.queue-item-copy p,
+.queue-item-copy > span,
+.queue-fine-print,
+.queue-session-note,
+.queue-section-heading > span,
+.queue-active-time,
+.queue-running-card > p,
+.event-row > div > span,
+.event-tag,
+.status-pill,
+.form-field > small,
+.safety-note,
+.deletion-option small {
+  color: var(--muted-ink);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.setting-row strong,
+.settings-heading h2,
+.connection-detail > strong,
+.field-label,
+.empty-folders h3,
+.pair-name h3,
+.section-heading h2,
+.activity-panel h2,
+.file-name-button strong,
+.media-name {
+  color: var(--ink);
+  font-size: 14px;
+}
+.input,
+.select,
+.pair-dialog .input,
+.pair-dialog .select,
+.language-select {
+  color: var(--ink);
+  border-color: #829a8c;
+  min-height: 42px;
+  font-size: 14px;
+}
+input::placeholder {
+  color: #63736b;
+  opacity: 1;
+}
+.form-error,
+.connection-error {
+  color: #a32638;
+  font-size: 13px;
+}
+.filter-tabs button {
+  min-height: 40px;
+  font-size: 13px;
+}
+.filter-tabs button.selected {
+  color: #285e4b;
+  background: #e7f1eb;
+}
+.computer-connection {
+  margin: 20px 0;
+  padding: 24px;
+  border: 1px solid #bbd2c3;
+  border-radius: 14px;
+  background: #f2f7f3;
+}
+.computer-connection-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.computer-connection-heading > div {
+  flex: 1;
+  min-width: 150px;
+}
+.computer-connection-heading h2 {
+  font-size: 18px;
+  font-weight: 650;
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.computer-connection .eyebrow {
+  color: #52625b;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  margin: 0;
+}
+.computer-connection > p,
+.computer-register > p {
+  color: #52625b;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 14px 0;
+}
+.computer-connection .folder-icon {
+  background: #e0eee6;
+  color: #285e4b;
+}
+.computer-status {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: #285e4b;
+  background: #e0eee6;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.computer-status.unavailable {
+  color: #80551c;
+  background: #fff0cf;
+}
+.computer-connection .computer-register {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 0;
+  background: none;
+  border: 0;
+}
+.computer-register > .btn {
+  justify-self: start;
+  margin-top: 6px;
+}
+.computer-register .field-label {
+  margin: 0;
+}
+.this-pc-label {
+  display: block;
+  font-weight: 600;
+  color: #285e4b !important;
+}
+.library-location button {
+  min-height: 36px;
+}
+.library-location button[aria-current="page"] {
+  font-weight: 600;
+}
+.library-search:focus-within,
+.search-box:focus-within {
+  outline: 2px solid #285e4b;
+  outline-offset: 2px;
+}
+@media (max-width: 760px) {
+  .computer-connection {
+    padding: 16px;
+  }
+  .computer-status {
+    margin-left: 0;
+  }
+  .computer-connection .button-row {
+    flex-wrap: wrap;
+  }
+  .library-heading {
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .library-toolbar {
+    flex-wrap: wrap;
+  }
+  .library-search {
+    flex: 1 1 180px;
+  }
+  .library-location {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.library-table td:nth-child(2) {
+  color: var(--muted-ink);
+  font-size: 13px;
+}
+.computer-connection .btn {
+  min-height: 40px;
+  height: auto;
+  font-size: 13px;
+}

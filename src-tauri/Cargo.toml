@@ -1,0 +1,23 @@
+[package]
+name = "proton-drive-desktop"
+version = "0.1.0"
+description = "CapyDock: a Linux desktop app with Proton Drive synchronization"
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-single-instance = "2"
+tauri-plugin-autostart = "2"
+drive-core = { path = "../crates/drive-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+uuid = { version = "1", features = ["v4"] }
+semver = "1"
+
+base64 = "0.22"
+tempfile = "3"
