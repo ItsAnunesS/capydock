@@ -2,7 +2,7 @@ name: CapyDock CI and release
 
 on:
   push:
-    branches: [dev]
+    branches: [dev, release]
   pull_request:
     branches: [dev, release]
   workflow_dispatch:
@@ -10,7 +10,7 @@ on:
 permissions:
   contents: read
 
-# Serialize publication and never interrupt an upload. New pending dev runs
+# Serialize publication and never interrupt an upload. New pending release runs
 # include all commits since the last tag, even when GitHub coalesces the queue.
 concurrency:
   group: capydock-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/dev'
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/release'
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     outputs:
@@ -39,17 +39,17 @@ jobs:
         run: |
           npm run test:ui
           npm run test:release
-          cargo test --locked -p drive-core
+          cargo test --locked --workspace
           cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Compute the release from Conventional Commits
         id: plan
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/release'
         run: npm run release:plan
-      - name: Compile pull requests
-        if: github.event_name == 'pull_request'
+      - name: Compile dev and pull requests without publishing
+        if: github.event_name == 'pull_request' || github.ref != 'refs/heads/release'
         run: npm run tauri -- build --no-bundle
       - name: Build only the Linux x86-64 AppImage
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/release'
         env:
           APPIMAGE_EXTRACT_AND_RUN: "1"
           NO_STRIP: "true"
@@ -59,7 +59,7 @@ jobs:
           npm run release:appimage
           npm run release:package
       - name: Retain the exact validated build
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/release'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: capydock-${{ github.sha }}
@@ -70,7 +70,7 @@ jobs:
 
   publish:
     needs: build
-    if: github.ref == 'refs/heads/dev' && github.event_name != 'pull_request' && needs.build.outputs.publish == 'true'
+    if: github.ref == 'refs/heads/release' && github.event_name != 'pull_request' && needs.build.outputs.publish == 'true'
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
@@ -86,7 +86,7 @@ jobs:
         with:
           name: capydock-${{ github.sha }}
           path: release-dist/
-      - name: Advance dev and release, tag and publish AppImage
+      - name: Advance release, tag and publish AppImage
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/release/publish.mjs

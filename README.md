@@ -4,7 +4,7 @@ Aplicativo independente para Linux, com **Tauri 2, Nuxt 4, Vue 3, Tailwind 4 e D
 
 ## Releases
 
-A versão pública começa em **0.1.0**, distribuída somente como **AppImage Linux x86-64**. Commits em `dev` passam pelos testes e geram versões e releases automaticamente, mantendo `release` alinhada à publicação. Consulte o [fluxo de releases](docs/releases.md) para as regras de Conventional Commits e retomada de falhas.
+A versão pública começa em **0.1.0**, distribuída somente como **AppImage Linux x86-64**. Commits em `dev` passam pelos testes e compilação. A publicação acontece somente quando as mudanças chegam à branch `release`. Consulte o [fluxo de releases](docs/releases.md) para as regras de Conventional Commits e retomada de falhas.
 
 ## Usar
 
@@ -223,4 +223,4 @@ A [direção de produto](docs/product-direction.md) detalha a identidade CapyDoc
 
 CapyDock é o nome escolhido para o aplicativo. A marca aparece na janela, navegação, bandeja, tela Sobre e atalho do Linux, com traduções em português, inglês e espanhol. O comando `capydock` abre o app; `proton-drive-desktop` continua disponível por compatibilidade. Proton Drive continua identificado como o serviço conectado.
 
-O identificador Tauri, os caminhos de instalação e dados e a chave de inicialização automática continuam os mesmos. A atualização reutiliza o atalho existente e preserva a sessão, pareamentos, histórico, recuperação e preferência de iniciar com o computador.
+O identificador Tauri e os caminhos de instalação e dados continuam os mesmos. O GTK usa esse identificador para associar a janela ao nome e ícone do CapyDock no GNOME/Wayland. A inicialização automática migra de “Proton Drive Desktop” para “CapyDock”, preservando opções existentes e usando o executável atual; uma configuração CapyDock já existente tem prioridade. Sessão, pareamentos, histórico e recuperação permanecem disponíveis.

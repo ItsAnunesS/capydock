@@ -21,8 +21,8 @@ if (
   !/^[a-f0-9]{40}$/.test(plan.commit)
 )
   throw new Error("Release plan does not match the validated workflow commit.");
-if (process.env.GITHUB_REF !== "refs/heads/dev")
-  throw new Error("Only dev may publish releases.");
+if (process.env.GITHUB_REF !== "refs/heads/release")
+  throw new Error("Only release may publish releases.");
 const repository = process.env.GITHUB_REPOSITORY;
 if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository || ""))
   throw new Error("Unexpected release repository.");
@@ -42,7 +42,12 @@ for (const name of expected.filter((file) => file !== "SHA256SUMS")) {
   if (!sums.split("\n").includes(`${hash}  ${name}`))
     throw new Error(`Checksum mismatch: ${name}`);
 }
-git("fetch", "origin", "+refs/heads/dev:refs/remotes/origin/dev", "--tags");
+git(
+  "fetch",
+  "origin",
+  "+refs/heads/release:refs/remotes/origin/release",
+  "--tags",
+);
 const tagExists =
   spawnSync("git", ["rev-parse", "--verify", `refs/tags/${plan.tag}`], {
     stdio: "ignore",
@@ -59,16 +64,11 @@ if (tagExists) {
       "This version already belongs to another source commit; refusing to replace it.",
     );
 } else {
-  if (git("rev-parse", "origin/dev") !== plan.commit) {
+  if (git("rev-parse", "origin/release") !== plan.commit) {
     console.log(
-      "dev advanced during the build; its queued workflow will publish the newer revision.",
+      "release advanced during the build; its queued workflow will publish the newer revision.",
     );
     process.exit(0);
-  }
-  const releaseRef = git("ls-remote", "--heads", "origin", "release");
-  if (releaseRef) {
-    git("fetch", "origin", "refs/heads/release:refs/remotes/origin/release");
-    git("merge-base", "--is-ancestor", "origin/release", "HEAD");
   }
   for (const file of releaseFiles)
     await copyFile(resolve("release-dist/source", file), file);
@@ -88,12 +88,11 @@ if (tagExists) {
     "-m",
     `CapyDock ${plan.tag}\n\nSource-Commit: ${plan.commit}`,
   );
-  // All refs advance together, without force pushes. Concurrent changes fail safely.
+  // Only release and its tag advance. Development is never changed by publication.
   git(
     "push",
     "--atomic",
     "origin",
-    "HEAD:refs/heads/dev",
     "HEAD:refs/heads/release",
     `refs/tags/${plan.tag}`,
   );

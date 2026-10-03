@@ -173,6 +173,7 @@ async function publishingFixture(t) {
   git(cwd, "remote", "add", "origin", remote);
   git(cwd, "branch", "release");
   git(cwd, "push", "origin", "dev", "release");
+  git(cwd, "switch", "release");
   const plan = await planRelease(cwd);
   const output = resolve(cwd, "release-dist");
   await mkdir(resolve(output, "assets"), { recursive: true });
@@ -213,7 +214,7 @@ else if (args[1] === 'edit') fs.writeFileSync(path, JSON.stringify({ isDraft: fa
     ...process.env,
     PATH: `${commands}:${process.env.PATH}`,
     GITHUB_SHA: plan.commit,
-    GITHUB_REF: "refs/heads/dev",
+    GITHUB_REF: "refs/heads/release",
     GITHUB_REPOSITORY: "ItsAnunesS/capydock",
     RELEASE_TEST_STATE: resolve(base, "github-release.json"),
   };
@@ -226,16 +227,19 @@ else if (args[1] === 'edit') fs.writeFileSync(path, JSON.stringify({ isDraft: fa
   return { ...context, remote, plan, env, publish };
 }
 
-test("publishes matching branch/tag versions and never overwrites an existing release", async (t) => {
+test("publishes release and its tag without changing dev or overwriting published assets", async (t) => {
   const { cwd, plan, env, publish } = await publishingFixture(t);
   const result = publish();
   assert.equal(result.status, 0, result.stderr);
   const tag = git(cwd, "rev-parse", `${plan.tag}^{}`);
-  for (const ref of ["dev", "release"])
-    assert.equal(
-      git(cwd, "ls-remote", "origin", `refs/heads/${ref}`).split(/\s/)[0],
-      tag,
-    );
+  assert.equal(
+    git(cwd, "ls-remote", "origin", "refs/heads/release").split(/\s/)[0],
+    tag,
+  );
+  assert.equal(
+    git(cwd, "ls-remote", "origin", "refs/heads/dev").split(/\s/)[0],
+    plan.commit,
+  );
   assert.match(
     git(cwd, "log", "-1", "--format=%s"),
     /^chore\(release\): v0\.1\.0/,
@@ -264,20 +268,53 @@ test("a failed asset upload resumes the same draft and tag on retry", async (t) 
   );
 });
 
-test("a newer dev commit is preserved and an obsolete build is not published", async (t) => {
+test("a newer release commit is preserved and an obsolete build is not published", async (t) => {
   const { cwd, plan, publish } = await publishingFixture(t);
   git(cwd, "commit", "--allow-empty", "-m", "fix: newer change");
   const newer = git(cwd, "rev-parse", "HEAD");
-  git(cwd, "push", "origin", "HEAD:dev");
+  git(cwd, "push", "origin", "HEAD:release");
   git(cwd, "checkout", "--detach", plan.commit);
   const result = publish();
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /dev advanced/);
+  assert.match(result.stdout, /release advanced/);
   assert.equal(
-    git(cwd, "ls-remote", "origin", "refs/heads/dev").split(/\s/)[0],
+    git(cwd, "ls-remote", "origin", "refs/heads/release").split(/\s/)[0],
     newer,
   );
   assert.equal(git(cwd, "tag", "-l", plan.tag), "");
+});
+
+test("dev and pull request refs cannot publish even with a valid release artifact", async (t) => {
+  const { cwd, publish, plan } = await publishingFixture(t);
+  for (const ref of ["refs/heads/dev", "refs/pull/1/merge"]) {
+    const result = publish({ GITHUB_REF: ref });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /Only release may publish/);
+  }
+  assert.equal(git(cwd, "tag", "-l", plan.tag), "");
+  assert.equal(
+    git(cwd, "ls-remote", "origin", "refs/heads/release").split(/\s/)[0],
+    plan.commit,
+  );
+});
+
+test("independent changes on dev do not prevent a release or get overwritten", async (t) => {
+  const { cwd, plan, publish } = await publishingFixture(t);
+  git(cwd, "switch", "dev");
+  git(cwd, "commit", "--allow-empty", "-m", "feat: unreleased development");
+  const dev = git(cwd, "rev-parse", "HEAD");
+  git(cwd, "push", "origin", "dev");
+  git(cwd, "checkout", "--detach", plan.commit);
+  const result = publish();
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(
+    git(cwd, "ls-remote", "origin", "refs/heads/dev").split(/\s/)[0],
+    dev,
+  );
+  assert.equal(
+    git(cwd, "ls-remote", "origin", "refs/heads/release").split(/\s/)[0],
+    git(cwd, "rev-parse", `${plan.tag}^{}`),
+  );
 });
 
 test("changed artifacts and mismatched source commits block publication", async (t) => {

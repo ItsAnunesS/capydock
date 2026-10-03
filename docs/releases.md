@@ -5,14 +5,14 @@ A primeira release pública é **v0.1.0**. O único pacote distribuído é o **A
 ## Fluxo automático
 
 1. Faça commits em `dev` ou abra um pull request para `dev`. Use Conventional Commits no histórico final; em squash merges, o título do PR vira a mensagem relevante.
-2. Cada push em `dev` executa checagem de versões, formatação, tipos, testes da interface, testes Rust e testes da automação de release. O backend também passa pelo Clippy.
-3. O workflow calcula a próxima versão, baixa o CLI Proton fixado em `bin/release.json` com verificação SHA-512, recompila o complemento Computers do commit fixado e gera o AppImage no Ubuntu 22.04.
-4. O job de publicação recebe o artefato já validado. Cria um commit `chore(release): vX.Y.Z [skip ci]` com as versões e metadados dos binários incorporados, e avança `dev`, `release` e a tag `vX.Y.Z` em um único push atômico, sem force push.
+2. Cada push em `dev` executa checagem de versões, formatação, tipos, testes da interface, testes Rust, testes da automação de release, Clippy e compilação nativa. Não calcula uma nova versão, cria tags nem publica releases.
+3. Para publicar, integre as mudanças de `dev` em `release` por merge ou pull request. O push em `release` repete as validações, calcula a próxima versão pelos commits desde a última tag e gera o AppImage no Ubuntu 22.04. O CLI Proton é fixado em `bin/release.json` e verificado por SHA-512; o complemento Computers é compilado do commit fixado.
+4. O job de publicação recebe o artefato já validado. Cria um commit `chore(release): vX.Y.Z [skip ci]` com as versões e metadados dos binários incorporados, e avança somente `release` e a tag `vX.Y.Z` em um único push atômico, sem force push. A branch `dev` não é modificada pela publicação.
 5. Uma release em rascunho recebe o AppImage, o checksum e a origem do build. Só se torna pública após concluir os uploads. As notas são geradas dos commits desde a tag anterior.
 
-Pull requests apenas validam e compilam, sem publicar. Pushes em `release` não disparam publicação: o fluxo de desenvolvimento começa em `dev`. O job de build tem permissão de leitura; somente o job final tem `contents: write`. O token é o `GITHUB_TOKEN` do próprio workflow; não há PAT ou credencial Proton nos secrets.
+Pull requests apenas validam e compilam, inclusive quando o destino é `release`. Somente pushes ou execuções manuais na branch `release` podem publicar. Essa restrição existe tanto no workflow quanto no script de publicação. O job de build tem permissão de leitura; somente o job final tem `contents: write`. O token é o `GITHUB_TOKEN` do próprio workflow; não há PAT ou credencial Proton nos secrets.
 
-O workflow também pode ser executado manualmente em **Actions → CapyDock CI and release → Run workflow → dev**. O arquivo precisa existir na branch padrão para o botão manual ficar disponível. A publicação automática por push não depende desse botão.
+Para publicar manualmente, use **Actions → CapyDock CI and release → Run workflow → release**. Selecionar `dev` executa apenas validação e compilação. O arquivo precisa existir na branch padrão para o botão manual ficar disponível. A publicação automática por push não depende desse botão.
 
 ## Regra de versão
 
@@ -30,14 +30,19 @@ Vale o maior impacto encontrado no conjunto de commits. Tags fora do histórico 
 
 ## Trabalhar depois de uma publicação
 
-O bot atualiza `dev` com o commit da versão publicada. Antes de começar um novo trabalho ou enviar alterações locais:
+O bot atualiza somente `release`. Depois de publicar, traga o commit de versão para `dev` por merge (ou por um PR de `release` para `dev`), preservando o histórico e a tag:
 
 ```sh
 git switch dev
 git pull --ff-only origin dev
+git fetch origin --tags
+git merge origin/release
+git push origin dev
 ```
 
-Se `dev` avançar durante um build, esse build antigo não será publicado; a próxima execução inclui os commits pendentes. As execuções são serializadas, e um upload em andamento não é cancelado automaticamente. Branches divergentes ou regras que proíbam o push fazem o workflow falhar, preservando o histórico. A automação não desativa proteções de branch.
+Esse push em `dev` não publica outra release. Para a próxima publicação, integre `dev` novamente em `release` sem descartar o histórico da última tag; evite squash ao sincronizar essas duas branches.
+
+Se `release` avançar durante um build, esse build antigo não será publicado; a próxima execução inclui os commits pendentes. Mudanças simultâneas em `dev` não impedem a publicação e permanecem intactas. As execuções são serializadas por branch, e um upload em andamento não é cancelado automaticamente. Regras que proíbam o push fazem o workflow falhar, preservando o histórico. A automação não desativa proteções de branch.
 
 ## Falhas e retomada
 
