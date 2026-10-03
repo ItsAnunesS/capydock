@@ -45,6 +45,8 @@ Se o upload falhar depois de criar a tag, use **Re-run failed jobs** na mesma ex
 
 O AppImage não precisa de Node.js, Rust ou Bun instalados no computador de destino. A atualização automática existente continua sendo a do CLI Proton. Publicar AppImages no GitHub não instala atualizações da interface automaticamente.
 
+Após o Tauri reunir as bibliotecas, `npm run release:appimage` restaura os executáveis incorporados e reempacota o AppDir com o plugin de saída AppImage. Isso preserva os checksums originais: o linuxdeploy altera o RPATH de executáveis ELF, incluindo recursos independentes do aplicativo. A preparação da release extrai os binários do AppImage final e confere os metadados e ambos os SHA-512 antes de disponibilizar o artefato. `CAPYDOCK_APPIMAGE_PLUGIN` permite indicar outro caminho para o plugin baixado pelo Tauri.
+
 ## Referências
 
 - [Tauri: distribuição AppImage e escolha da base Linux](https://v2.tauri.app/distribute/appimage/)

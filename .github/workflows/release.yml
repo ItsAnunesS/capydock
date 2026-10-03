@@ -56,6 +56,7 @@ jobs:
         run: |
           rm -rf target/release/bundle/appimage
           npm run tauri -- build --bundles appimage
+          npm run release:appimage
           npm run release:package
       - name: Retain the exact validated build
         if: github.event_name != 'pull_request'

@@ -15,6 +15,10 @@ import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { planRelease as createPlan } from "../scripts/release/plan.mjs";
 import { setVersion, releaseFiles } from "../scripts/release/version.mjs";
+import {
+  restoreEmbeddedExecutables,
+  verifyEmbeddedExecutables,
+} from "../scripts/release/appimage.mjs";
 
 const project = fileURLToPath(new URL("../", import.meta.url));
 const planRelease = (cwd) =>
@@ -25,6 +29,67 @@ const git = (cwd, ...args) =>
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
   }).trim();
+
+async function embeddedFixture(t) {
+  const cwd = await mkdtemp(resolve(tmpdir(), "capydock-embedded-test-"));
+  t.after(() => rm(cwd, { recursive: true, force: true }));
+  const appDir = resolve(cwd, "CapyDock.AppDir");
+  const embedded = resolve(appDir, "usr/lib/CapyDock/bin");
+  await mkdir(resolve(cwd, "bin"));
+  await mkdir(embedded, { recursive: true });
+  for (const [binary, metadata] of [
+    ["proton-drive", "release.json"],
+    ["proton-drive-computers", "computers-release.json"],
+  ]) {
+    const bytes = Buffer.from(`original-${binary}`);
+    const info = JSON.stringify({
+      version: "0.1.0",
+      sha512: createHash("sha512").update(bytes).digest("hex"),
+    });
+    await writeFile(resolve(cwd, "bin", binary), bytes);
+    await writeFile(resolve(cwd, "bin", metadata), info);
+    await writeFile(resolve(embedded, binary), `${bytes}-rewritten-rpath`);
+    await writeFile(resolve(embedded, metadata), info);
+  }
+  return { cwd, appDir, embedded };
+}
+
+test("detects linuxdeploy changes and restores both embedded executables exactly", async (t) => {
+  const { cwd, appDir, embedded } = await embeddedFixture(t);
+  await assert.rejects(
+    verifyEmbeddedExecutables(appDir, cwd),
+    /Embedded executable/,
+  );
+  await restoreEmbeddedExecutables(appDir, cwd);
+  const info = await verifyEmbeddedExecutables(appDir, cwd);
+  assert.deepEqual(Object.keys(info), ["protonCli", "computersHelper"]);
+  await writeFile(
+    resolve(embedded, "proton-drive-computers"),
+    "corrupted helper",
+  );
+  await assert.rejects(
+    verifyEmbeddedExecutables(appDir, cwd),
+    /proton-drive-computers/,
+  );
+  await restoreEmbeddedExecutables(appDir, cwd);
+  await writeFile(resolve(embedded, "release.json"), "{}");
+  await assert.rejects(verifyEmbeddedExecutables(appDir, cwd), /proton-drive/);
+});
+
+test("rejects a modified source before replacing any embedded executable", async (t) => {
+  const { cwd, appDir, embedded } = await embeddedFixture(t);
+  const before = await readFile(resolve(embedded, "proton-drive"));
+  await writeFile(
+    resolve(cwd, "bin/proton-drive-computers"),
+    "unexpected bytes",
+  );
+  await assert.rejects(
+    restoreEmbeddedExecutables(appDir, cwd),
+    /Source executable/,
+  );
+  assert.deepEqual(await readFile(resolve(embedded, "proton-drive")), before);
+});
+
 async function fixture(t) {
   const base = await mkdtemp(resolve(tmpdir(), "capydock-release-test-"));
   t.after(() => rm(base, { recursive: true, force: true }));

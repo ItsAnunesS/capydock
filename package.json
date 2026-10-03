@@ -21,6 +21,7 @@
     "computers:build": "node scripts/build-computers.mjs",
     "version:check": "node scripts/release/version.mjs --check",
     "release:plan": "node scripts/release/plan.mjs",
+    "release:appimage": "node scripts/release/appimage.mjs",
     "release:package": "node scripts/release/package.mjs",
     "test:release": "node --test tests/release.test.mjs"
   },
