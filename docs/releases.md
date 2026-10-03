@@ -1,0 +1,52 @@
+# Builds e releases do CapyDock
+
+A primeira release pública é **v0.1.0**. O único pacote distribuído é o **AppImage para Linux x86-64**. `SHA256SUMS` e `build-info.json` acompanham o pacote para conferir integridade e origem dos componentes incorporados.
+
+## Fluxo automático
+
+1. Faça commits em `dev` ou abra um pull request para `dev`. Use Conventional Commits no histórico final; em squash merges, o título do PR vira a mensagem relevante.
+2. Cada push em `dev` executa checagem de versões, formatação, tipos, testes da interface, testes Rust e testes da automação de release. O backend também passa pelo Clippy.
+3. O workflow calcula a próxima versão, baixa o CLI Proton fixado em `bin/release.json` com verificação SHA-512, recompila o complemento Computers do commit fixado e gera o AppImage no Ubuntu 22.04.
+4. O job de publicação recebe o artefato já validado. Cria um commit `chore(release): vX.Y.Z [skip ci]` com as versões e metadados dos binários incorporados, e avança `dev`, `release` e a tag `vX.Y.Z` em um único push atômico, sem force push.
+5. Uma release em rascunho recebe o AppImage, o checksum e a origem do build. Só se torna pública após concluir os uploads. As notas são geradas dos commits desde a tag anterior.
+
+Pull requests apenas validam e compilam, sem publicar. Pushes em `release` não disparam publicação: o fluxo de desenvolvimento começa em `dev`. O job de build tem permissão de leitura; somente o job final tem `contents: write`. O token é o `GITHUB_TOKEN` do próprio workflow; não há PAT ou credencial Proton nos secrets.
+
+O workflow também pode ser executado manualmente em **Actions → CapyDock CI and release → Run workflow → dev**. O arquivo precisa existir na branch padrão para o botão manual ficar disponível. A publicação automática por push não depende desse botão.
+
+## Regra de versão
+
+| Commits desde a última tag                                                    | Resultado a partir de 0.1.0                       |
+| ----------------------------------------------------------------------------- | ------------------------------------------------- |
+| Primeira publicação, sem tags anteriores                                      | **0.1.0**, independentemente dos commits iniciais |
+| `fix: ...` ou `perf: ...`                                                     | 0.1.1                                             |
+| `feat: ...`                                                                   | 0.2.0                                             |
+| `feat!: ...` ou footer `BREAKING CHANGE: ...`                                 | 1.0.0                                             |
+| Somente `docs`, `chore`, `ci`, `test` ou refatoração sem mudança incompatível | Build no Actions, sem nova release                |
+
+Vale o maior impacto encontrado no conjunto de commits. Tags fora do histórico da branch são ignoradas. O padrão é sempre `MAJOR.MINOR.PATCH`, sem reset de versão depois da primeira publicação. Não crie tags de release manualmente.
+
+`package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`, os dois manifests Cargo e `Cargo.lock` ficam com a mesma versão. `npm run version:check` verifica isso. As versões do CLI Proton e do complemento são independentes: não representam a versão do aplicativo.
+
+## Trabalhar depois de uma publicação
+
+O bot atualiza `dev` com o commit da versão publicada. Antes de começar um novo trabalho ou enviar alterações locais:
+
+```sh
+git switch dev
+git pull --ff-only origin dev
+```
+
+Se `dev` avançar durante um build, esse build antigo não será publicado; a próxima execução inclui os commits pendentes. As execuções são serializadas, e um upload em andamento não é cancelado automaticamente. Branches divergentes ou regras que proíbam o push fazem o workflow falhar, preservando o histórico. A automação não desativa proteções de branch.
+
+## Falhas e retomada
+
+Se o upload falhar depois de criar a tag, use **Re-run failed jobs** na mesma execução. O artefato fica retido por 14 dias. O job confere o SHA original e a tag, e retoma apenas o rascunho correspondente. Se os artefatos expirarem, repita todos os jobs da execução original para reconstruir a mesma versão. Uma release já publicada não tem seus arquivos substituídos; retomar uma versão antiga também não a promove sobre uma versão mais recente.
+
+O AppImage não precisa de Node.js, Rust ou Bun instalados no computador de destino. A atualização automática existente continua sendo a do CLI Proton. Publicar AppImages no GitHub não instala atualizações da interface automaticamente.
+
+## Referências
+
+- [Tauri: distribuição AppImage e escolha da base Linux](https://v2.tauri.app/distribute/appimage/)
+- [GitHub: permissões e disparos de workflows pelo GITHUB_TOKEN](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
+- [Analisador de Conventional Commits](https://github.com/semantic-release/commit-analyzer)

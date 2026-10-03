@@ -14,11 +14,15 @@
     "cli:install": "node scripts/install-cli.mjs",
     "test": "cargo test --manifest-path crates/drive-core/Cargo.toml",
     "test:ui": "vitest run",
-    "format": "prettier --write app tests scripts nuxt.config.ts vitest.config.ts package.json",
-    "format:check": "prettier --check app tests scripts nuxt.config.ts vitest.config.ts package.json",
+    "format": "prettier --write app tests scripts nuxt.config.ts vitest.config.ts package.json .github",
+    "format:check": "prettier --check app tests scripts nuxt.config.ts vitest.config.ts package.json .github",
     "install:desktop": "node scripts/install-desktop.mjs",
     "test:browser": "vite --config tests/browser/vite.config.ts",
-    "computers:build": "node scripts/build-computers.mjs"
+    "computers:build": "node scripts/build-computers.mjs",
+    "version:check": "node scripts/release/version.mjs --check",
+    "release:plan": "node scripts/release/plan.mjs",
+    "release:package": "node scripts/release/package.mjs",
+    "test:release": "node --test tests/release.test.mjs"
   },
   "dependencies": {
     "@lucide/vue": "^1.51.0",
@@ -36,7 +40,7 @@
     "@semantic-release/release-notes-generator": "14.1.1",
     "@tauri-apps/cli": "^2.8.0",
     "@vue/test-utils": "^2.5.1",
-    "conventional-changelog-conventionalcommits": "10.4.0",
+    "conventional-changelog-conventionalcommits": "8.0.0",
     "happy-dom": "^20.14.5",
     "prettier": "^3.9.9",
     "semver": "7.8.5",

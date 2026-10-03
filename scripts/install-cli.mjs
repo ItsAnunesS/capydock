@@ -34,13 +34,21 @@ const request = async (url) => {
   return response;
 };
 await mkdir(dirname(destination), { recursive: true });
-const manifest = await (
-  await request("https://proton.me/download/drive/cli/version.json")
-).json();
-const release = manifest.Releases.find(
-  (item) => item.CategoryName === "Stable",
-);
-const file = release?.Files.find((item) => item.Platform === platform);
+let release;
+let file;
+if (process.argv.includes("--locked")) {
+  const locked = JSON.parse(await readFile(metadata, "utf8"));
+  if (locked.platform !== platform)
+    throw new Error("O CLI fixado pertence a outra arquitetura.");
+  release = { Version: locked.version };
+  file = { Url: locked.url, Sha512CheckSum: locked.sha512 };
+} else {
+  const manifest = await (
+    await request("https://proton.me/download/drive/cli/version.json")
+  ).json();
+  release = manifest.Releases.find((item) => item.CategoryName === "Stable");
+  file = release?.Files.find((item) => item.Platform === platform);
+}
 if (!file || !/^[a-f0-9]{128}$/i.test(file.Sha512CheckSum))
   throw new Error("Release oficial sem checksum ou plataforma suportada.");
 const bytes = Buffer.from(await (await request(file.Url)).arrayBuffer());

@@ -1,0 +1,230 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { execFileSync, spawnSync } from "node:child_process";
+import {
+  mkdtemp,
+  mkdir,
+  copyFile,
+  readFile,
+  writeFile,
+  rm,
+} from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, resolve } from "node:path";
+import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
+import { planRelease } from "../scripts/release/plan.mjs";
+import { setVersion, releaseFiles } from "../scripts/release/version.mjs";
+
+const project = fileURLToPath(new URL("../", import.meta.url));
+const git = (cwd, ...args) =>
+  execFileSync("git", args, {
+    cwd,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
+async function fixture(t) {
+  const base = await mkdtemp(resolve(tmpdir(), "capydock-release-test-"));
+  t.after(() => rm(base, { recursive: true, force: true }));
+  const cwd = resolve(base, "repo");
+  await mkdir(cwd);
+  git(cwd, "init", "-b", "dev");
+  git(cwd, "config", "user.name", "Release Test");
+  git(cwd, "config", "user.email", "release-test@example.invalid");
+  git(cwd, "config", "commit.gpgsign", "false");
+  git(cwd, "config", "tag.gpgsign", "false");
+  for (const file of releaseFiles) {
+    await mkdir(dirname(resolve(cwd, file)), { recursive: true });
+    await copyFile(resolve(project, file), resolve(cwd, file));
+  }
+  await setVersion("0.1.0", cwd);
+  git(cwd, "add", ".");
+  git(cwd, "commit", "-m", "feat!: initialize the application");
+  return { cwd, base };
+}
+
+test("first release is exactly 0.1.0, including when initial commits are breaking", async (t) => {
+  const { cwd } = await fixture(t);
+  const plan = await planRelease(cwd);
+  assert.equal(plan.version, "0.1.0");
+  assert.equal(plan.tag, "v0.1.0");
+  assert.equal(plan.publish, true);
+  assert.match(plan.notes, /0\.1\.0/);
+});
+
+for (const [message, expected] of [
+  ["fix: recover a missing folder", "0.1.1"],
+  ["perf: reduce metadata requests", "0.1.1"],
+  ["feat: add another provider", "0.2.0"],
+  ["feat!: change configuration format", "1.0.0"],
+  [
+    "refactor: replace configuration\n\nBREAKING CHANGE: old configurations are no longer supported",
+    "1.0.0",
+  ],
+])
+  test(`Conventional Commits: ${message.split("\n")[0]}`, async (t) => {
+    const { cwd } = await fixture(t);
+    git(cwd, "tag", "v0.1.0");
+    git(cwd, "commit", "--allow-empty", "-m", message);
+    assert.equal((await planRelease(cwd)).version, expected);
+  });
+
+test("documentation-only changes do not publish a release", async (t) => {
+  const { cwd } = await fixture(t);
+  git(cwd, "tag", "v0.1.0");
+  git(cwd, "commit", "--allow-empty", "-m", "docs: explain startup");
+  const plan = await planRelease(cwd);
+  assert.equal(plan.version, "0.1.0");
+  assert.equal(plan.publish, false);
+});
+
+test("unrelated tags cannot change this branch's version", async (t) => {
+  const { cwd } = await fixture(t);
+  const other = git(cwd, "commit-tree", "HEAD^{tree}", "-m", "unrelated root");
+  git(cwd, "tag", "v99.0.0", other);
+  assert.equal((await planRelease(cwd)).version, "0.1.0");
+});
+
+test("all app versions update together; invalid values and drift are rejected", async (t) => {
+  const { cwd } = await fixture(t);
+  await setVersion("0.2.3", cwd);
+  await setVersion("0.2.3", cwd, true);
+  await assert.rejects(setVersion("01.0.0", cwd));
+  await assert.rejects(setVersion("0.2.3-beta", cwd));
+  const file = resolve(cwd, "package.json");
+  const data = JSON.parse(await readFile(file, "utf8"));
+  data.version = "0.2.4";
+  await writeFile(file, JSON.stringify(data));
+  await assert.rejects(setVersion("0.2.3", cwd, true));
+});
+
+async function publishingFixture(t) {
+  const context = await fixture(t);
+  const { cwd, base } = context;
+  const remote = resolve(base, "remote.git");
+  git(base, "init", "--bare", remote);
+  git(cwd, "remote", "add", "origin", remote);
+  git(cwd, "branch", "release");
+  git(cwd, "push", "origin", "dev", "release");
+  const plan = await planRelease(cwd);
+  const output = resolve(cwd, "release-dist");
+  await mkdir(resolve(output, "assets"), { recursive: true });
+  await writeFile(resolve(output, "release-plan.json"), JSON.stringify(plan));
+  await writeFile(resolve(output, "RELEASE_NOTES.md"), plan.notes);
+  let sums = "";
+  for (const [name, content] of [
+    [`CapyDock_${plan.version}_x86_64.AppImage`, "test AppImage"],
+    ["build-info.json", "{}"],
+  ]) {
+    await writeFile(resolve(output, "assets", name), content);
+    sums += `${createHash("sha256").update(content).digest("hex")}  ${name}\n`;
+  }
+  await writeFile(resolve(output, "assets/SHA256SUMS"), sums);
+  for (const file of releaseFiles) {
+    await mkdir(dirname(resolve(output, "source", file)), { recursive: true });
+    await copyFile(resolve(cwd, file), resolve(output, "source", file));
+  }
+  const commands = resolve(base, "commands");
+  await mkdir(commands);
+  await writeFile(
+    resolve(commands, "gh"),
+    `#!/usr/bin/env node
+const fs = require('node:fs');
+const path = process.env.RELEASE_TEST_STATE;
+const args = process.argv.slice(2);
+fs.appendFileSync(path + '.log', args.join(' ') + '\\n');
+if (args[1] === 'view') {
+  if (!fs.existsSync(path)) process.exit(1);
+  process.stdout.write(fs.readFileSync(path));
+} else if (args[1] === 'create') fs.writeFileSync(path, JSON.stringify({ isDraft: true }));
+else if (args[1] === 'upload' && process.env.RELEASE_TEST_FAIL_UPLOAD) process.exit(1);
+else if (args[1] === 'edit') fs.writeFileSync(path, JSON.stringify({ isDraft: false }));
+`,
+    { mode: 0o755 },
+  );
+  const env = {
+    ...process.env,
+    PATH: `${commands}:${process.env.PATH}`,
+    GITHUB_SHA: plan.commit,
+    GITHUB_REF: "refs/heads/dev",
+    GITHUB_REPOSITORY: "zephyrushq/capydock",
+    RELEASE_TEST_STATE: resolve(base, "github-release.json"),
+  };
+  const publish = (extra = {}) =>
+    spawnSync(
+      process.execPath,
+      [resolve(project, "scripts/release/publish.mjs")],
+      { cwd, env: { ...env, ...extra }, encoding: "utf8" },
+    );
+  return { ...context, remote, plan, env, publish };
+}
+
+test("publishes matching branch/tag versions and never overwrites an existing release", async (t) => {
+  const { cwd, plan, env, publish } = await publishingFixture(t);
+  const result = publish();
+  assert.equal(result.status, 0, result.stderr);
+  const tag = git(cwd, "rev-parse", `${plan.tag}^{}`);
+  for (const ref of ["dev", "release"])
+    assert.equal(
+      git(cwd, "ls-remote", "origin", `refs/heads/${ref}`).split(/\s/)[0],
+      tag,
+    );
+  assert.match(
+    git(cwd, "log", "-1", "--format=%s"),
+    /^chore\(release\): v0\.1\.0/,
+  );
+  const retry = publish();
+  assert.equal(retry.status, 0, retry.stderr);
+  assert.match(retry.stdout, /already published/);
+  const log = await readFile(`${env.RELEASE_TEST_STATE}.log`, "utf8");
+  assert.equal(
+    log.split("\n").filter((line) => line.startsWith("release upload")).length,
+    1,
+  );
+});
+
+test("a failed asset upload resumes the same draft and tag on retry", async (t) => {
+  const { cwd, plan, env, publish } = await publishingFixture(t);
+  assert.notEqual(publish({ RELEASE_TEST_FAIL_UPLOAD: "1" }).status, 0);
+  const tag = git(cwd, "rev-parse", `${plan.tag}^{}`);
+  git(cwd, "checkout", "--detach", plan.commit);
+  const retry = publish();
+  assert.equal(retry.status, 0, retry.stderr);
+  assert.equal(git(cwd, "rev-parse", `${plan.tag}^{}`), tag);
+  assert.equal(
+    JSON.parse(await readFile(env.RELEASE_TEST_STATE, "utf8")).isDraft,
+    false,
+  );
+});
+
+test("a newer dev commit is preserved and an obsolete build is not published", async (t) => {
+  const { cwd, plan, publish } = await publishingFixture(t);
+  git(cwd, "commit", "--allow-empty", "-m", "fix: newer change");
+  const newer = git(cwd, "rev-parse", "HEAD");
+  git(cwd, "push", "origin", "HEAD:dev");
+  git(cwd, "checkout", "--detach", plan.commit);
+  const result = publish();
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /dev advanced/);
+  assert.equal(
+    git(cwd, "ls-remote", "origin", "refs/heads/dev").split(/\s/)[0],
+    newer,
+  );
+  assert.equal(git(cwd, "tag", "-l", plan.tag), "");
+});
+
+test("changed artifacts and mismatched source commits block publication", async (t) => {
+  const { cwd, plan, publish } = await publishingFixture(t);
+  assert.notEqual(publish({ GITHUB_SHA: "a".repeat(40) }).status, 0);
+  await writeFile(
+    resolve(
+      cwd,
+      `release-dist/assets/CapyDock_${plan.version}_x86_64.AppImage`,
+    ),
+    "modified",
+  );
+  const result = publish();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Checksum mismatch/);
+  assert.equal(git(cwd, "tag", "-l", plan.tag), "");
+});

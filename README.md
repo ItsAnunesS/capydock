@@ -2,6 +2,10 @@
 
 Aplicativo independente para Linux, com **Tauri 2, Nuxt 4, Vue 3, Tailwind 4 e DaisyUI 5**. Incorpora o **CLI oficial da Proton**, sem pedir a senha dentro da interface. Não é um produto da Proton AG.
 
+## Releases
+
+A versão pública começa em **0.1.0**, distribuída somente como **AppImage Linux x86-64**. Commits em `dev` passam pelos testes e geram versões e releases automaticamente, mantendo `release` alinhada à publicação. Consulte o [fluxo de releases](docs/releases.md) para as regras de Conventional Commits e retomada de falhas.
+
 ## Usar
 
 Depois da instalação local:
@@ -88,7 +92,8 @@ sudo apt install build-essential libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-a
 
 ```sh
 npm ci
-npm run cli:install       # consulta o manifesto oficial e verifica SHA-512
+npm run cli:install -- --locked # baixa o CLI fixado e verifica SHA-512
+npm run computers:build    # requer Bun 1.3.14
 npm run desktop           # aplicação Tauri + Nuxt
 npm run dev               # somente prévia da interface, sem acesso ao computador
 ```
@@ -111,7 +116,7 @@ Para verificar o atualizador real, baixando uma cópia oficial temporária:
 cargo run -p drive-core --example verify_update
 ```
 
-O download incorpora cerca de 112 MiB de CLI. O binário é ignorado pelo Git; `bin/release.json` registra a origem e o checksum. Execute `cli:install` antes de compilar um checkout novo. Para distribuir outra arquitetura, baixe o CLI correspondente e compile nessa arquitetura. A atualização automática é **do CLI**; não há atualização automática da GUI sem uma infraestrutura de releases e assinatura própria.
+O download incorpora cerca de 112 MiB de CLI. O binário é ignorado pelo Git; `bin/release.json` registra a origem e o checksum. Execute `cli:install -- --locked` e `computers:build` antes de compilar um checkout novo. Os builds de distribuição suportam Linux x86-64. A atualização automática é **do CLI**; as releases AppImage ainda não habilitam atualização automática da GUI.
 
 ## Arquitetura e dados
 
