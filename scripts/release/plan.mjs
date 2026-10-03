@@ -16,7 +16,12 @@ const git = (cwd, ...args) =>
   }).trim();
 const preset = { preset: "conventionalcommits" };
 
-export async function planRelease(cwd = process.cwd()) {
+export async function planRelease(
+  cwd = process.cwd(),
+  repositoryUrl = process.env.GITHUB_REPOSITORY
+    ? `https://github.com/${process.env.GITHUB_REPOSITORY}`
+    : git(cwd, "remote", "get-url", "origin"),
+) {
   const commit = git(cwd, "rev-parse", "HEAD");
   const tags = git(cwd, "tag", "--merged", "HEAD")
     .split("\n")
@@ -49,7 +54,6 @@ export async function planRelease(cwd = process.cwd()) {
     : initialVersion;
   const tag = `v${version}`;
   const publish = !previousTag || Boolean(type);
-  const repositoryUrl = "https://github.com/zephyrushq/capydock";
   const notes = publish
     ? await generateNotes(preset, {
         cwd,

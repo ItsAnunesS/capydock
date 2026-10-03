@@ -13,10 +13,12 @@ import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
-import { planRelease } from "../scripts/release/plan.mjs";
+import { planRelease as createPlan } from "../scripts/release/plan.mjs";
 import { setVersion, releaseFiles } from "../scripts/release/version.mjs";
 
 const project = fileURLToPath(new URL("../", import.meta.url));
+const planRelease = (cwd) =>
+  createPlan(cwd, "https://github.com/example/capydock");
 const git = (cwd, ...args) =>
   execFileSync("git", args, {
     cwd,
@@ -147,7 +149,7 @@ else if (args[1] === 'edit') fs.writeFileSync(path, JSON.stringify({ isDraft: fa
     PATH: `${commands}:${process.env.PATH}`,
     GITHUB_SHA: plan.commit,
     GITHUB_REF: "refs/heads/dev",
-    GITHUB_REPOSITORY: "zephyrushq/capydock",
+    GITHUB_REPOSITORY: "ItsAnunesS/capydock",
     RELEASE_TEST_STATE: resolve(base, "github-release.json"),
   };
   const publish = (extra = {}) =>
