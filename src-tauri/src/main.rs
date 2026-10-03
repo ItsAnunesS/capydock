@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod catalog;
+mod desktop;
 mod scheduler;
 
 use drive_core::{
@@ -1218,11 +1219,24 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(
             tauri_plugin_autostart::Builder::new()
-                // Keep the existing startup registration across display-name changes.
-                .app_name("Proton Drive Desktop")
+                .app_name("CapyDock")
                 .build(),
         )
         .setup(|app| {
+            let executable = if let Some(appimage) = app.env().appimage {
+                let appimage = PathBuf::from(appimage);
+                if let Err(error) =
+                    desktop::align_appimage_launcher(&app.path().data_dir()?, &appimage)
+                {
+                    eprintln!("Could not align the CapyDock desktop entry: {error}");
+                }
+                appimage
+            } else {
+                std::env::current_exe()?
+            };
+            if let Err(error) = desktop::migrate_autostart(&app.path().config_dir()?, &executable) {
+                eprintln!("Could not migrate the CapyDock startup entry: {error}");
+            }
             let data = app.path().app_data_dir()?;
             fs::create_dir_all(data.join("bin"))?;
             let binary = data.join("bin/proton-drive");
