@@ -6,12 +6,14 @@ import { readFileSync } from "node:fs";
 import { parse } from "@vue/compiler-sfc";
 import {
   catalogs,
+  defaultLocale,
   encodeMessage,
   localeStorageKey,
   messagePrefix,
   savedLocale,
   setLocale,
   useI18n,
+  type Locale,
 } from "../app/composables/useI18n";
 import { useDrive } from "../app/composables/useDrive";
 import LanguageSetting from "../app/components/LanguageSetting.vue";
@@ -96,6 +98,55 @@ function driveState(): DriveState {
   };
 }
 describe("translations", () => {
+  it("uses English for a fresh profile, invalid preferences and unavailable storage", () => {
+    expect(defaultLocale).toBe("en");
+    localStorage.removeItem(localeStorageKey);
+    expect(savedLocale()).toBe("en");
+    for (const unsupported of ["", "unsupported", "null"]) {
+      localStorage.setItem(localeStorageKey, unsupported);
+      expect(savedLocale()).toBe("en");
+    }
+    const storage = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(() => {
+        throw new Error("Storage is unavailable");
+      });
+    try {
+      expect(savedLocale()).toBe("en");
+    } finally {
+      storage.mockRestore();
+    }
+    setLocale("unsupported" as Locale);
+    expect(i18n.language.value).toBe("en");
+    expect(document.documentElement.lang).toBe("en-US");
+    expect(i18n.t("Configurações")).toBe("Settings");
+    expect(i18n.message("Caminho inválido.")).toBe("Invalid path.");
+  });
+  it("falls back to English for missing or empty translations, including nested native errors", () => {
+    const key = "Não foi possível salvar o idioma: {0}";
+    for (const lang of ["pt", "es"] as const) {
+      setLocale(lang);
+      const original = catalogs[lang][key]!;
+      const nested = catalogs[lang]["Caminho inválido."]!;
+      try {
+        delete catalogs[lang][key];
+        catalogs[lang]["Caminho inválido."] = "  ";
+        expect(
+          i18n.message(encodeMessage(key, [{ message: "Caminho inválido." }])),
+        ).toBe("Couldn't save the language: Invalid path.");
+        catalogs[lang][key] = "";
+        expect(i18n.t(key, ["ECONNRESET"])).toBe(
+          "Couldn't save the language: ECONNRESET",
+        );
+        expect(i18n.t("Unknown external diagnostic")).toBe(
+          "Unknown external diagnostic",
+        );
+      } finally {
+        catalogs[lang][key] = original;
+        catalogs[lang]["Caminho inválido."] = nested;
+      }
+    }
+  });
   it("has matching catalogs and parameters in all three languages", () => {
     const parameters = (s: string) =>
       [...s.matchAll(/\{\d+\}/g)].map((x) => x[0]).sort();
@@ -174,7 +225,7 @@ describe("translations", () => {
     setLocale("pt");
     expect(i18n.plural("{0} ativa", "{0} ativas", 0)).toBe("0 ativas");
     localStorage.setItem(localeStorageKey, "unsupported");
-    expect(savedLocale()).toBe("pt");
+    expect(savedLocale()).toBe("en");
   });
   it("translates nested native diagnostics without interpreting filenames, markup or unknown CLI text", () => {
     const path = "Documentos/<script>alert(1)</script>/{0}.pdf";
@@ -299,6 +350,49 @@ describe("translations", () => {
   });
 });
 describe("language preference", () => {
+  it("starts the web preview in English without a saved preference", async () => {
+    localStorage.removeItem(localeStorageKey);
+    api.native = false;
+    let drive!: ReturnType<typeof useDrive>;
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          drive = useDrive();
+          return () => h(LanguageSetting, { onChange: drive.changeLanguage });
+        },
+      }),
+      { global },
+    );
+    await flushPromises();
+    expect(drive.state.value.config.locale).toBe("en");
+    expect(i18n.language.value).toBe("en");
+    expect(wrapper.get("h2").text()).toBe("Language");
+    expect((wrapper.get("select").element as HTMLSelectElement).value).toBe(
+      "en",
+    );
+    expect(wrapper.findAll("option")[0]!.text()).toBe("English");
+    expect(api.invoke).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+  it("falls back to English if native settings return an unsupported locale", async () => {
+    const state = driveState();
+    state.config.locale = "unsupported" as Locale;
+    api.invoke.mockResolvedValue(state);
+    const wrapper = mount(
+      defineComponent({
+        setup() {
+          useDrive();
+          return () => h(LanguageSetting);
+        },
+      }),
+      { global },
+    );
+    await flushPromises();
+    expect(i18n.language.value).toBe("en");
+    expect(savedLocale()).toBe("en");
+    expect(wrapper.get("h2").text()).toBe("Language");
+    wrapper.unmount();
+  });
   it("restores native preferences and saves through the actual selector without touching transfers", async () => {
     const state = driveState();
     state.config.locale = "es";

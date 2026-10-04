@@ -10,7 +10,7 @@ export default defineNuxtConfig({
     head: {
       title: "CapyDock",
       link: [{ rel: "icon", type: "image/svg+xml", href: "/icon.svg" }],
-      htmlAttrs: { lang: "pt-BR" },
+      htmlAttrs: { lang: "en-US" },
       meta: [{ name: "color-scheme", content: "light" }],
     },
   },

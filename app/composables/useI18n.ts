@@ -4,9 +4,10 @@ import en from "~/i18n/en.json";
 import es from "~/i18n/es.json";
 
 export type Locale = "pt" | "en" | "es";
+export const defaultLocale: Locale = "en";
 export const languages = [
-  { value: "pt", label: "Português", tag: "pt-BR" },
   { value: "en", label: "English", tag: "en-US" },
+  { value: "pt", label: "Português", tag: "pt-BR" },
   { value: "es", label: "Español", tag: "es-ES" },
 ] as const;
 export const catalogs: Record<Locale, Record<string, string>> = { pt, en, es };
@@ -25,7 +26,7 @@ export function savedLocale(): Locale {
   } catch {
     /* Storage can be disabled in browser previews. */
   }
-  return "pt";
+  return defaultLocale;
 }
 const selected = ref<Locale>(savedLocale());
 const locale = computed(
@@ -33,10 +34,10 @@ const locale = computed(
 );
 
 export function setLocale(value: Locale) {
-  if (!isLocale(value)) return;
-  selected.value = value;
+  const next = isLocale(value) ? value : defaultLocale;
+  selected.value = next;
   try {
-    localStorage.setItem(localeStorageKey, value);
+    localStorage.setItem(localeStorageKey, next);
   } catch {
     /* Native settings remain authoritative. */
   }
@@ -57,9 +58,16 @@ export function useI18n() {
     values: MessageValue[] = [],
     depth = 0,
   ): string {
-    const pattern = Object.hasOwn(catalogs[selected.value], key)
-      ? catalogs[selected.value][key]!
-      : key;
+    const lookup = (dictionary: Record<string, string>) => {
+      const value = Object.hasOwn(dictionary, key)
+        ? dictionary[key]
+        : undefined;
+      return value?.trim() ? value : undefined;
+    };
+    const pattern =
+      lookup(catalogs[selected.value]) ??
+      lookup(catalogs[defaultLocale]) ??
+      key;
     return pattern.replace(/\{(\d+)\}/g, (placeholder, index) => {
       const value = values[Number(index)];
       if (value === undefined || value === null)

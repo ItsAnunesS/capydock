@@ -4,10 +4,17 @@ use std::collections::BTreeMap;
 #[derive(Debug, Default, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum Locale {
-    #[default]
     Pt,
-    En,
     Es,
+    #[default]
+    #[serde(other)]
+    En,
+}
+
+fn deserialize_locale<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Locale, D::Error> {
+    Ok(Option::<Locale>::deserialize(deserializer)?.unwrap_or_default())
 }
 
 impl Locale {
@@ -57,6 +64,7 @@ pub struct SyncPair {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct Config {
+    #[serde(deserialize_with = "deserialize_locale")]
     pub locale: Locale,
     pub pairs: Vec<SyncPair>,
     pub auto_update: bool,
@@ -216,7 +224,7 @@ mod tests {
     fn locale_defaults_for_existing_settings_and_round_trips_without_changing_them() {
         let original = r#"{"paused":true,"autoUpdate":false,"accountId":"account","events":[]}"#;
         let mut config: Config = serde_json::from_str(original).unwrap();
-        assert_eq!(config.locale, Locale::Pt);
+        assert_eq!(config.locale, Locale::En);
         assert!(!config.close_to_tray);
         config.close_to_tray = true;
         for locale in [Locale::Pt, Locale::En, Locale::Es] {
@@ -231,7 +239,31 @@ mod tests {
             assert!(!restored.auto_update);
             assert_eq!(restored.account_id.as_deref(), Some("account"));
         }
-        assert!(serde_json::from_str::<Locale>(r#""fr""#).is_err());
+        assert_eq!(
+            serde_json::from_str::<Locale>(r#""fr""#).unwrap(),
+            Locale::En
+        );
+    }
+
+    #[test]
+    fn english_is_the_default_and_fallback_without_resetting_other_preferences() {
+        assert_eq!(Config::default().locale, Locale::En);
+        assert_eq!(
+            Locale::default().library_names(),
+            ["Files", "Photos", "Albums"]
+        );
+        assert_eq!(Locale::default().tray_labels(), ("Open CapyDock", "Quit"));
+        for json in [
+            r#"{"paused":true,"autoUpdate":false,"closeToTray":true}"#,
+            r#"{"locale":"unsupported","paused":true,"autoUpdate":false,"closeToTray":true}"#,
+            r#"{"locale":null,"paused":true,"autoUpdate":false,"closeToTray":true}"#,
+        ] {
+            let config: Config = serde_json::from_str(json).unwrap();
+            assert_eq!(config.locale, Locale::En);
+            assert!(config.paused);
+            assert!(config.close_to_tray);
+            assert!(!config.auto_update);
+        }
     }
     fn local(hash: &str) -> Fingerprint {
         Fingerprint {

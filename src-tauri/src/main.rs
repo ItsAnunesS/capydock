@@ -1259,7 +1259,7 @@ fn main() {
                 } else {
                     let adjacent = std::env::current_exe()?
                         .parent()
-                        .ok_or("Executável sem diretório")?
+                        .ok_or("Executable has no parent directory")?
                         .join("bin/proton-drive");
                     if adjacent.exists() {
                         adjacent
@@ -1282,7 +1282,7 @@ fn main() {
                 .join("bin/proton-drive-computers");
             let adjacent = std::env::current_exe()?
                 .parent()
-                .ok_or("Executável sem diretório")?
+                .ok_or("Executable has no parent directory")?
                 .join("bin/proton-drive-computers");
             let computers_binary = if adjacent.exists() {
                 adjacent
@@ -1366,5 +1366,5 @@ fn main() {
             open_recovery
         ])
         .run(tauri::generate_context!())
-        .expect("Falha ao iniciar CapyDock");
+        .expect("Failed to start CapyDock");
 }

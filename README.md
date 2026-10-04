@@ -180,7 +180,7 @@ A gravação ocorre fora do bloqueio de leitura e salva resultados parciais a ca
 
 ## Idiomas
 
-Em **Configurações → Idioma**, escolha **Português**, **English** ou **Español**. A alteração é imediata e não interrompe a fila. A preferência fica em `settings.json`; a prévia web usa armazenamento local. Instalações anteriores continuam em português.
+English is the default and fallback language throughout the interface, native tray, dialogs and activity messages. New installations, settings without a language, and unsupported or null saved locales use English. Missing or empty translations also fall back to English. In **Settings → Language**, users can select **English**, **Português** or **Español**; an explicitly saved supported language is preserved. Changes apply immediately without interrupting the queue. Native preferences are saved in `settings.json`; the web preview uses local storage.
 
 Os catálogos ficam em `app/i18n/{pt,en,es}.json`. O texto português é a chave estável, com parâmetros numerados (`{0}`, `{1}`). Datas, números e plurais usam `Intl`. Mensagens dinâmicas do Rust separam a chave dos parâmetros em um envelope identificado; nomes de arquivos, caminhos e conteúdo de documentos nunca são traduzidos. Mensagens novas do histórico acompanham o idioma escolhido; mensagens dinâmicas de versões antigas e diagnósticos externos do CLI/sistema conservam o texto original quando não há tradução conhecida. O conteúdo e o idioma do site Proton integrado são geridos pela própria Proton.
 

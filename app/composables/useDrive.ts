@@ -3,6 +3,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { DriveState } from "~/types";
 import {
   useI18n,
+  defaultLocale,
   savedLocale,
   isLocale,
   encodeMessage,
@@ -19,7 +20,7 @@ export function useDrive() {
   const notification = ref<{ message: string; error: boolean } | null>(null);
   const state = ref<DriveState>({
     config: {
-      locale: "pt",
+      locale: savedLocale(),
       pairs: [],
       autoUpdate: true,
       paused: false,
@@ -66,12 +67,12 @@ export function useDrive() {
     const revision = localeRevision;
     try {
       state.value = await invoke<DriveState>("get_state");
-      if (
-        !localeChanging.value &&
-        revision === localeRevision &&
-        isLocale(state.value.config.locale)
-      )
-        setLocale(state.value.config.locale);
+      if (!localeChanging.value && revision === localeRevision)
+        setLocale(
+          isLocale(state.value.config.locale)
+            ? state.value.config.locale
+            : defaultLocale,
+        );
     } catch (error) {
       toast(String(error), true);
     } finally {

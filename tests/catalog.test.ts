@@ -38,7 +38,7 @@ describe("responsive catalog", () => {
     await flushPromises();
     expect(wrapper.get(".file-name-button").text()).toContain(file.name);
     expect(wrapper.get(".library-refresh-note").text()).toContain(
-      "12 pastas verificadas",
+      "12 folders checked",
     );
     await vi.advanceTimersByTimeAsync(1200);
     await flushPromises();
@@ -65,7 +65,7 @@ describe("responsive catalog", () => {
     await flushPromises();
     expect(wrapper.get(".file-name-button").text()).toContain(file.name);
     expect(wrapper.get('[role="alert"]').text()).toContain("Sem conexão");
-    await wrapper.get('[aria-label="Atualizar biblioteca"]').trigger("click");
+    await wrapper.get('[aria-label="Refresh library"]').trigger("click");
     await flushPromises();
     expect(command).toHaveBeenLastCalledWith("list_library", {
       path: "/my-files",

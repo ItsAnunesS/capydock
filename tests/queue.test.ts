@@ -1,3 +1,4 @@
+import { encodeMessage } from "../app/composables/useI18n";
 import { describe, expect, it } from "vitest";
 import { mount } from "@vue/test-utils";
 import OperationQueue from "../app/components/OperationQueue.vue";
@@ -9,7 +10,7 @@ const job = (id: string, status: Operation["status"]): Operation => ({
   status,
   lane: "transfer",
   kind: "sync",
-  title: `Sincronizar ${id}`,
+  title: encodeMessage("Sincronizar {0}", [id]),
   detail: `Documentos/${id}.pdf`,
   pairId: id,
   automatic: false,
@@ -38,11 +39,11 @@ describe("operation queue", () => {
     expect(wrapper.findAll(".queue-active-card")).toHaveLength(3);
     const index = wrapper
       .findAll(".queue-active-card")
-      .find((card) => card.text().includes("Sincronizar documents"))!;
-    expect(index.text()).toContain("Índice em segundo plano");
+      .find((card) => card.text().includes("Sync documents"))!;
+    expect(index.text()).toContain("Background index");
     await index.get("button").trigger("click");
     expect(wrapper.emitted("cancel")).toEqual([["documents"]]);
-    expect(index.get("button").text()).toBe("Cancelar consulta");
+    expect(index.get("button").text()).toBe("Cancel request");
     wrapper.unmount();
   });
   it("separates active, ordered waiting and history, and cancels the exact queued item", async () => {
@@ -61,24 +62,24 @@ describe("operation queue", () => {
       },
       global,
     });
-    expect(wrapper.get(".queue-running").text()).toContain("Sincronizar A");
+    expect(wrapper.get(".queue-running").text()).toContain("Sync A");
     expect(
       wrapper.findAll(".queue-waiting li").map((row) => row.text()),
     ).toEqual([
-      expect.stringContaining("Sincronizar B"),
-      expect.stringContaining("Sincronizar C"),
+      expect.stringContaining("Sync B"),
+      expect.stringContaining("Sync C"),
     ]);
     expect(wrapper.get(".queue-history").text()).toContain("Sem conexão");
-    await wrapper.get('[aria-label="Cancelar Sincronizar C"]').trigger("click");
+    await wrapper.get('[aria-label="Cancel Sync C"]').trigger("click");
     expect(wrapper.emitted("cancel")).toEqual([["C"]]);
     await wrapper
       .findAll("button")
-      .find((b) => b.text() === "Pausar fila")!
+      .find((b) => b.text() === "Pause queue")!
       .trigger("click");
     expect(wrapper.emitted("pause")).toEqual([[true]]);
     await wrapper
       .findAll("button")
-      .find((b) => b.text() === "Limpar histórico")!
+      .find((b) => b.text() === "Clear history")!
       .trigger("click");
     expect(wrapper.emitted("clear")).toHaveLength(1);
     wrapper.unmount();
@@ -103,14 +104,14 @@ describe("operation queue", () => {
         items: [job("A", "completed"), job("B", "cancelling")],
       },
     });
-    expect(wrapper.get(".queue-running").text()).toContain("Parando…");
+    expect(wrapper.get(".queue-running").text()).toContain("Stopping…");
     expect(wrapper.get(".queue-waiting").text()).toContain(
-      "Nenhuma operação esperando",
+      "No operations waiting",
     );
     expect(
       wrapper.get(".queue-running button").attributes("disabled"),
     ).toBeDefined();
-    expect(wrapper.get(".queue-history").text()).toContain("Concluída");
+    expect(wrapper.get(".queue-history").text()).toContain("Completed");
     wrapper.unmount();
   });
   it("resumes a paused queue and does not interrupt non-cancellable work", async () => {
@@ -127,7 +128,7 @@ describe("operation queue", () => {
     expect(wrapper.find(".queue-running button").exists()).toBe(false);
     await wrapper
       .findAll("button")
-      .find((b) => b.text() === "Retomar fila")!
+      .find((b) => b.text() === "Resume queue")!
       .trigger("click");
     expect(wrapper.emitted("pause")).toEqual([[false]]);
     wrapper.unmount();
@@ -144,8 +145,8 @@ describe("operation queue", () => {
       },
       global,
     });
-    expect(wrapper.text()).toContain("Sincronizar A");
-    expect(wrapper.text()).toContain("1 na fila");
+    expect(wrapper.text()).toContain("Sync A");
+    expect(wrapper.text()).toContain("1 queued");
     await wrapper.get("button").trigger("click");
     expect(wrapper.emitted("open")).toHaveLength(1);
     wrapper.unmount();
@@ -167,21 +168,17 @@ describe("operation queue", () => {
       global,
     });
     expect(
-      wrapper
-        .get('[aria-label="Sincronizar Documentos"]')
-        .attributes("disabled"),
+      wrapper.get('[aria-label="Sync Documentos"]').attributes("disabled"),
     ).toBeUndefined();
-    await wrapper.get('[aria-label="Sincronizar Documentos"]').trigger("click");
+    await wrapper.get('[aria-label="Sync Documentos"]').trigger("click");
     expect(wrapper.emitted("sync")).toHaveLength(1);
     await wrapper.setProps({ syncing: false, queued: true });
-    expect(wrapper.text()).toContain("Na fila");
+    expect(wrapper.text()).toContain("Queued");
     expect(
-      wrapper
-        .get('[aria-label="Sincronizar Documentos"]')
-        .attributes("disabled"),
+      wrapper.get('[aria-label="Sync Documentos"]').attributes("disabled"),
     ).toBeDefined();
     expect(
-      wrapper.get('[aria-label="Pausar Documentos"]').attributes("disabled"),
+      wrapper.get('[aria-label="Pause Documentos"]').attributes("disabled"),
     ).toBeUndefined();
     wrapper.unmount();
   });

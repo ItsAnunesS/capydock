@@ -41,7 +41,7 @@ describe("folder setup", () => {
     });
     await wrapper
       .findAll("button")
-      .find((b) => b.text() === "Escolher")!
+      .find((b) => b.text() === "Choose")!
       .trigger("click");
     await flushPromises();
     expect((wrapper.get("#local-path").element as HTMLInputElement).value).toBe(
@@ -49,14 +49,14 @@ describe("folder setup", () => {
     );
     await wrapper
       .findAll("button")
-      .find((b) => b.text() === "Explorar")!
+      .find((b) => b.text() === "Browse")!
       .trigger("click");
     await flushPromises();
     await wrapper.get(".folder-list button").trigger("click");
     await flushPromises();
     await wrapper
       .findAll("button")
-      .find((b) => b.text() === "Usar esta pasta")!
+      .find((b) => b.text() === "Use this folder")!
       .trigger("click");
     await wrapper.get("#sync-mode").setValue("upload");
     await wrapper.get("#sync-interval").setValue("15");
@@ -115,16 +115,14 @@ describe("folder controls", () => {
       global,
     });
     expect(
-      wrapper
-        .get('[aria-label="Sincronizar Documentos"]')
-        .attributes("disabled"),
+      wrapper.get('[aria-label="Sync Documentos"]').attributes("disabled"),
     ).toBeDefined();
     await wrapper.setProps({ connected: true });
-    await wrapper.get('[aria-label="Sincronizar Documentos"]').trigger("click");
+    await wrapper.get('[aria-label="Sync Documentos"]').trigger("click");
     expect(wrapper.emitted("sync")).toHaveLength(1);
     await wrapper.setProps({ changing: true });
     expect(
-      wrapper.get('[aria-label="Pausar Documentos"]').attributes("disabled"),
+      wrapper.get('[aria-label="Pause Documentos"]').attributes("disabled"),
     ).toBeDefined();
     wrapper.unmount();
   });
@@ -141,14 +139,12 @@ describe("folder controls", () => {
       },
       global,
     });
-    expect(wrapper.text()).toContain("Pausada");
-    expect(wrapper.find('[aria-label="Ativar Documentos"]').exists()).toBe(
+    expect(wrapper.text()).toContain("Paused");
+    expect(wrapper.find('[aria-label="Enable Documentos"]').exists()).toBe(
       true,
     );
     expect(
-      wrapper
-        .get('[aria-label="Sincronizar Documentos"]')
-        .attributes("disabled"),
+      wrapper.get('[aria-label="Sync Documentos"]').attributes("disabled"),
     ).toBeDefined();
     wrapper.unmount();
   });
@@ -226,7 +222,7 @@ describe("cloud library", () => {
     });
     await wrapper
       .findAll("button")
-      .find((button) => button.text() === "Sincronizar aqui")!
+      .find((button) => button.text() === "Sync here")!
       .trigger("click");
     expect(wrapper.emitted("sync")?.[0]).toEqual([
       expect.objectContaining({ remotePath: album.path, name: "Verão" }),
@@ -254,7 +250,7 @@ describe("cloud library", () => {
     expect(command).not.toHaveBeenCalledWith("preview_file", expect.anything());
     await wrapper
       .findAll("button")
-      .find((button) => button.text() === "Abrir documento")!
+      .find((button) => button.text() === "Open document")!
       .trigger("click");
     await flushPromises();
     expect(command).toHaveBeenLastCalledWith("open_document", {
@@ -263,7 +259,7 @@ describe("cloud library", () => {
     expect(
       wrapper
         .findAll("button")
-        .some((button) => button.text() === "Baixar arquivo"),
+        .some((button) => button.text() === "Download file"),
     ).toBe(false);
     wrapper.unmount();
   });
@@ -276,11 +272,11 @@ describe("cloud library", () => {
     });
     await wrapper.get("#tab-photos").trigger("click");
     expect(command).not.toHaveBeenCalled();
-    expect(wrapper.text()).toContain("Sua biblioteca começa com uma conexão");
+    expect(wrapper.text()).toContain("Your library starts with a connection");
     expect(
       wrapper
         .findAll("button")
-        .find((button) => button.text() === "Configurar biblioteca")!
+        .find((button) => button.text() === "Configure library")!
         .attributes("disabled"),
     ).toBeDefined();
     wrapper.unmount();
@@ -297,7 +293,7 @@ describe("complete library setup", () => {
     ).toBe(false);
     await wrapper
       .findAll("button")
-      .find((button) => button.text() === "Escolher")!
+      .find((button) => button.text() === "Choose")!
       .trigger("click");
     await flushPromises();
     await wrapper.get(".deletion-option input").setValue(true);
@@ -341,7 +337,7 @@ describe("computers UI", () => {
     await wrapper.get("#tab-computers").trigger("click");
     await flushPromises();
     expect(command).toHaveBeenCalledWith("list_library", { path: "/devices" });
-    expect(wrapper.text()).not.toContain("Sincronizar aqui");
+    expect(wrapper.text()).not.toContain("Sync here");
     await wrapper.get(".computer-register").trigger("submit");
     await flushPromises();
     expect(command).toHaveBeenCalledWith("register_computer", {
@@ -353,10 +349,10 @@ describe("computers UI", () => {
       revision: 1,
     });
     expect(wrapper.find(".computer-register").exists()).toBe(false);
-    expect(wrapper.text()).toContain("Vinculado à conta");
+    expect(wrapper.text()).toContain("Linked to account");
     await wrapper
       .findAll("button")
-      .find((b) => b.text() === "Adicionar pasta deste PC")!
+      .find((b) => b.text() === "Add a folder from this PC")!
       .trigger("click");
     expect(wrapper.emitted("sync")?.[0]).toEqual([
       expect.objectContaining({ remotePath: device.path, name: "" }),
@@ -371,7 +367,7 @@ describe("computers UI", () => {
     });
     await wrapper.get("#pair-name").setValue("Documentos");
     await wrapper.get("#local-path").setValue("/home/test/Documentos");
-    expect(wrapper.text()).toContain("Será criada a pasta");
+    expect(wrapper.text()).toContain("The folder");
     await wrapper.get("form").trigger("submit");
     await flushPromises();
     expect(command).toHaveBeenCalledWith("save_pair", {
@@ -390,13 +386,13 @@ describe("computers UI", () => {
     });
     await wrapper
       .findAll("button")
-      .find((b) => b.text() === "Computadores")!
+      .find((b) => b.text() === "Computers")!
       .trigger("click");
     await flushPromises();
     expect(
       wrapper
         .findAll("button")
-        .find((b) => b.text() === "Usar esta pasta")!
+        .find((b) => b.text() === "Use this folder")!
         .attributes("disabled"),
     ).toBeDefined();
     expect(wrapper.find(".new-folder").exists()).toBe(false);
@@ -443,7 +439,7 @@ describe("computer connection states", () => {
     expect(wrapper.get("h2").text()).toBe("Meu PC");
     await wrapper
       .findAll("button")
-      .find((b) => b.text() === "Adicionar pasta deste PC")!
+      .find((b) => b.text() === "Add a folder from this PC")!
       .trigger("click");
     expect(wrapper.emitted("sync")).toEqual([[device]]);
     expect(wrapper.emitted("register")).toBeUndefined();
@@ -458,7 +454,7 @@ describe("computer connection states", () => {
       global,
     });
     expect(wrapper.find("form").exists()).toBe(false);
-    expect(wrapper.text()).toContain("Registro indisponível");
+    expect(wrapper.text()).toContain("Registration unavailable");
     await wrapper.setProps({
       registration: { name: "Original", deviceUid: null },
     });
@@ -481,11 +477,11 @@ describe("computer connection states", () => {
     await flushPromises();
     await wrapper
       .findAll("button")
-      .find((b) => b.text() === "Ver sincronização")!
+      .find((b) => b.text() === "View sync")!
       .trigger("click");
     expect(wrapper.emitted("manage")).toHaveLength(1);
     expect(wrapper.emitted("sync")).toBeUndefined();
-    expect(wrapper.text()).not.toContain("Sincronizar tudo");
+    expect(wrapper.text()).not.toContain("Sync everything");
     wrapper.unmount();
   });
 });
