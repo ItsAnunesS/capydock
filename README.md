@@ -309,6 +309,8 @@ When [reporting an issue](https://github.com/ItsAnunesS/capydock/issues), includ
 
 ## Contributing and direction
 
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow, English source conventions, validation and contribution terms. Use [SECURITY.md](SECURITY.md) to report a suspected vulnerability without disclosing it in a public issue.
+
 Use `dev` for normal development and keep changes focused. Follow the existing interface styles, update all three translation catalogs when adding messages, and use Conventional Commits so release notes and version changes remain predictable. Changes reach users after they are integrated into `release`.
 
 The longer term goal is to bring several cloud accounts and Syncthing instances into one app, with separate connections and clearly identified destinations. The [product direction](docs/product-direction.md) describes that plan. The current release remains focused on Proton Drive.
@@ -320,3 +322,9 @@ The banner uses the existing [CapyDock logo](public/icon.svg). Its editable sour
 CapyDock uses the official [Proton Drive CLI and SDK](https://github.com/ProtonDriveApps/sdk). The Computers helper is built by this project from pinned SDK sources; it is not an official Proton binary. Tauri, Nuxt, Vue, DaisyUI, Tailwind CSS, Lucide and PDF.js provide the desktop and interface foundations.
 
 Component licenses and acknowledgements are recorded in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and the bundled [Proton SDK license](bin/PROTON-SDK-LICENSE.md).
+
+## License
+
+CapyDock's original source code and documentation are available under the [MIT license](LICENSE).
+
+The CapyDock logo, icons, banner and other original artwork are excluded from MIT and covered by [ASSETS_LICENSE.md](ASSETS_LICENSE.md). They may not be redistributed without prior written permission. A distributed fork must remove or replace these assets unless permission has been granted. Third party components and icons retain their own licenses.

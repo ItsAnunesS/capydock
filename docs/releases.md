@@ -1,36 +1,36 @@
-# Builds e releases do CapyDock
+# CapyDock builds and releases
 
-A primeira release pública é **v0.1.0**. O único pacote distribuído é o **AppImage para Linux x86-64**. O arquivo `.AppImage.zsync` permite detectar atualizações no Gear Lever; `SHA256SUMS` e `build-info.json` conferem integridade e origem dos componentes incorporados.
+The first public release is **v0.1.0**. The only application package published is the **Linux x86-64 AppImage**. Its `.AppImage.zsync` companion supports Gear Lever updates. `SHA256SUMS` and `build-info.json` record file integrity and build provenance.
 
-## Fluxo automático
+## Automatic workflow
 
-1. Faça commits em `dev` ou abra um pull request para `dev`. Use Conventional Commits no histórico final; em squash merges, o título do PR vira a mensagem relevante.
-2. Cada push em `dev` executa checagem de versões, formatação, tipos, testes da interface, testes Rust, testes da automação de release, Clippy e compilação nativa. Não calcula uma nova versão, cria tags nem publica releases.
-3. Para publicar, integre as mudanças de `dev` em `release` por merge ou pull request. O push em `release` repete as validações, calcula a próxima versão pelos commits desde a última tag e gera o AppImage no Ubuntu 22.04. O CLI Proton é fixado em `bin/release.json` e verificado por SHA-512; o complemento Computers é compilado do commit fixado.
-4. O job de publicação recebe o artefato já validado. Cria um commit `chore(release): vX.Y.Z [skip ci]` com as versões e metadados dos binários incorporados, e avança somente `release` e a tag `vX.Y.Z` em um único push atômico, sem force push. A branch `dev` não é modificada pela publicação.
-5. Uma release em rascunho recebe o AppImage, o `.zsync`, os checksums e a origem do build. Só se torna pública após concluir os uploads. As notas são geradas dos commits desde a tag anterior.
+1. Develop on `dev` or open a pull request targeting it. Use Conventional Commits in the final history. A squash merge uses the pull request title as its commit message.
+2. A push to `dev` checks versions, formatting, frontend types, interface tests, Rust tests, release tests and Clippy, then compiles the native application. It does not calculate a new version or publish a release.
+3. Merge tested changes into `release` to publish them. That branch repeats the checks, calculates the next version from commits since the last reachable release tag and builds the AppImage on Ubuntu 22.04. The Proton CLI is pinned in `bin/release.json` and checked with SHA-512. The Computers helper is built from its pinned SDK revision.
+4. The publishing job receives the validated artifact. It creates `chore(release): vX.Y.Z [skip ci]` with matching versions and component metadata, then pushes `release` and its tag atomically without force. Publication advances only `release` and the tag.
+5. A draft release receives the AppImage, zsync file, checksums and provenance. It becomes public after all uploads succeed. Release notes come from the commits since the previous tag.
 
-Pull requests apenas validam e compilam, inclusive quando o destino é `release`. Somente pushes ou execuções manuais na branch `release` podem publicar. Essa restrição existe tanto no workflow quanto no script de publicação. O job de build tem permissão de leitura; somente o job final tem `contents: write`. O token é o `GITHUB_TOKEN` do próprio workflow; não há PAT ou credencial Proton nos secrets.
+Pull requests validate and compile, including those targeting `release`. Only pushes or manual runs on `release` may publish. Both the workflow and the publication script enforce this restriction. The build job has read permission; only the publishing job has `contents: write`. Publication uses the workflow's `GITHUB_TOKEN` and needs no Proton credentials.
 
-Para publicar manualmente, use **Actions → CapyDock CI and release → Run workflow → release**. Selecionar `dev` executa apenas validação e compilação. O arquivo precisa existir na branch padrão para o botão manual ficar disponível. A publicação automática por push não depende desse botão.
+To start a manual run, choose **Actions → CapyDock CI and release → Run workflow → release**. Selecting `dev` runs validation and compilation only. A manual run still follows the commit based version rules; it does not force a new version for documentation changes. The workflow must exist on the default branch for the manual button to appear.
 
-## Regra de versão
+## Version rules
 
-| Commits desde a última tag                                                    | Resultado a partir de 0.1.0                       |
-| ----------------------------------------------------------------------------- | ------------------------------------------------- |
-| Primeira publicação, sem tags anteriores                                      | **0.1.0**, independentemente dos commits iniciais |
-| `fix: ...` ou `perf: ...`                                                     | 0.1.1                                             |
-| `feat: ...`                                                                   | 0.2.0                                             |
-| `feat!: ...` ou footer `BREAKING CHANGE: ...`                                 | 1.0.0                                             |
-| Somente `docs`, `chore`, `ci`, `test` ou refatoração sem mudança incompatível | Build no Actions, sem nova release                |
+| Commits since the previous tag                               | Result starting at 0.1.0                      |
+| :----------------------------------------------------------- | :-------------------------------------------- |
+| First publication without a previous release tag             | **0.1.0**, regardless of initial commit types |
+| `fix:` or `perf:`                                            | 0.1.1                                         |
+| `feat:`                                                      | 0.2.0                                         |
+| `feat!:` or a `BREAKING CHANGE:` footer                      | 1.0.0                                         |
+| Only `docs`, `chore`, `ci`, `test` or compatible refactoring | A validated build without a new release       |
 
-Vale o maior impacto encontrado no conjunto de commits. Tags fora do histórico da branch são ignoradas. O padrão é sempre `MAJOR.MINOR.PATCH`, sem reset de versão depois da primeira publicação. Não crie tags de release manualmente.
+The greatest impact in the commit set determines the version. Tags outside the branch's history are ignored. Versions follow `MAJOR.MINOR.PATCH`; they are not reset after publication. Let the workflow create release tags.
 
-`package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`, os dois manifests Cargo e `Cargo.lock` ficam com a mesma versão. `npm run version:check` verifica isso. As versões do CLI Proton e do complemento são independentes: não representam a versão do aplicativo.
+`package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`, both Cargo package manifests and `Cargo.lock` must agree. `npm run version:check` checks this. Proton CLI and Computers helper versions are independent of the app version.
 
-## Trabalhar depois de uma publicação
+## After publication
 
-O bot atualiza somente `release`. Depois de publicar, traga o commit de versão para `dev` por merge (ou por um PR de `release` para `dev`), preservando o histórico e a tag:
+Bring the release bot's version commit back into `dev`, preserving the history and tag:
 
 ```sh
 git switch dev
@@ -40,23 +40,37 @@ git merge origin/release
 git push origin dev
 ```
 
-Esse push em `dev` não publica outra release. Para a próxima publicação, integre `dev` novamente em `release` sem descartar o histórico da última tag; evite squash ao sincronizar essas duas branches.
+This push does not publish another release. For the next publication, merge `dev` into `release` while preserving the latest release tag's history. Avoid squash merges when synchronizing these two branches.
 
-Se `release` avançar durante um build, esse build antigo não será publicado; a próxima execução inclui os commits pendentes. Mudanças simultâneas em `dev` não impedem a publicação e permanecem intactas. As execuções são serializadas por branch, e um upload em andamento não é cancelado automaticamente. Regras que proíbam o push fazem o workflow falhar, preservando o histórico. A automação não desativa proteções de branch.
+If `release` advances during a build, the older build does not publish; the following run includes the pending changes. Concurrent work on `dev` is preserved. Runs are serialized per branch and an upload is not canceled automatically. A protected branch that rejects the publishing push causes the workflow to fail without rewriting history. The automation does not disable branch protection.
 
-## Falhas e retomada
+## Failed publication
 
-Se o upload falhar depois de criar a tag, use **Re-run failed jobs** na mesma execução. O artefato fica retido por 14 dias. O job confere o SHA original e a tag, e retoma apenas o rascunho correspondente. Se os artefatos expirarem, repita todos os jobs da execução original para reconstruir a mesma versão. Uma release já publicada não tem seus arquivos substituídos; retomar uma versão antiga também não a promove sobre uma versão mais recente.
+If an upload fails after the tag is created, choose **Re-run failed jobs** on the same run. Artifacts are retained for 14 days. Publication checks the original source commit and tag before resuming the matching draft.
 
-O AppImage não precisa de Node.js, Rust ou Bun instalados no computador de destino. O CLI Proton tem atualização automática no aplicativo. Desde **0.1.2**, a seção ELF `.upd_info` contém `gh-releases-zsync|ItsAnunesS|capydock|latest|CapyDock_*_x86_64.AppImage.zsync`. O Gear Lever detecta esse canal ao importar e gerencia as atualizações da interface conforme as suas preferências. Ele também lê o ícone incorporado, sem download nem configuração manual. AppImages anteriores precisam ser substituídos uma vez pelo novo pacote.
+If the artifacts have expired, rerun all jobs from the original execution to rebuild the same version. Published assets are not overwritten. Retrying an older release does not promote it over a newer one.
 
-O reempacotamento obtém o repositório de `GITHUB_REPOSITORY` (ou do remoto `origin` em builds locais) e gera o `.zsync` com o nome final do asset. O pipeline valida o canal incorporado, a versão do desktop entry, os PNGs reais em `.DirIcon` e `capydock.png`, além de nome, URL relativa, tamanho e SHA-1 do arquivo de atualização. O `.zsync` também entra em `SHA256SUMS`. Não renomeie os assets ao publicar.
+## AppImage packaging and updates
 
-Após o Tauri reunir as bibliotecas, `npm run release:appimage` restaura os executáveis incorporados e reempacota o AppDir com o plugin de saída AppImage. Isso preserva os checksums originais: o linuxdeploy altera o RPATH de executáveis ELF, incluindo recursos independentes do aplicativo. A preparação da release extrai os binários do AppImage final e confere os metadados e ambos os SHA-512 antes de disponibilizar o artefato. `CAPYDOCK_APPIMAGE_PLUGIN` permite indicar outro caminho para o plugin baixado pelo Tauri.
+The installed AppImage does not require Node.js, Rust or Bun. The app can update its managed Proton CLI independently. Gear Lever manages updates to the AppImage according to the user's preferences.
 
-## Referências
+Since version 0.1.2, the embedded `.upd_info` channel is:
 
-- [Tauri: distribuição AppImage e escolha da base Linux](https://v2.tauri.app/distribute/appimage/)
-- [AppImage: informações incorporadas de atualização e zsync](https://docs.appimage.org/packaging-guide/optional/updates.html)
-- [GitHub: permissões e disparos de workflows pelo GITHUB_TOKEN](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
-- [Analisador de Conventional Commits](https://github.com/semantic-release/commit-analyzer)
+```text
+gh-releases-zsync|ItsAnunesS|capydock|latest|CapyDock_*_x86_64.AppImage.zsync
+```
+
+Gear Lever reads this channel and the embedded CapyDock icon when importing the package. Older AppImages need to be replaced once with a package containing this metadata.
+
+Repackaging reads the repository from `GITHUB_REPOSITORY`, or from `origin` for a local build, and generates the zsync file using the final asset name. Validation checks the update channel, desktop entry version, real PNG files at `.DirIcon` and `capydock.png`, and the zsync filename, relative URL, size and SHA-1. The zsync file is included in `SHA256SUMS`. Keep published asset names unchanged.
+
+After Tauri gathers libraries, `npm run release:appimage` restores the exact bundled executables and repackages the AppDir. This is necessary because linuxdeploy can rewrite the RPATH of independent ELF resources. The final AppImage is extracted to verify component metadata and SHA-512 checksums before publication. `CAPYDOCK_APPIMAGE_PLUGIN` can override the cached AppImage output plugin path.
+
+The package includes `LICENSE`, `ASSETS_LICENSE.md`, `THIRD_PARTY_NOTICES.md` and the pinned Proton SDK license. Code and artwork have separate terms. Read the notices before redistributing a build.
+
+## References
+
+1. [Tauri AppImage distribution](https://v2.tauri.app/distribute/appimage/)
+2. [AppImage update metadata and zsync](https://docs.appimage.org/packaging-guide/optional/updates.html)
+3. [GitHub workflow triggers and token permissions](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
+4. [Conventional Commits analyzer](https://github.com/semantic-release/commit-analyzer)

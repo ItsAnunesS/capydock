@@ -1,12 +1,40 @@
-# Componentes de terceiros
+# Third party notices
 
-O executável `proton-drive` é um binário oficial da Proton distribuído sem modificações. Sua versão, origem HTTPS e SHA-512 estão registrados em `bin/release.json`. Ele não é de autoria deste projeto.
+CapyDock is an independent project. Proton and Proton Drive are trademarks of their respective owners. Their inclusion does not imply affiliation, sponsorship or endorsement.
 
-Consulte o [repositório oficial Proton Drive SDK](https://github.com/ProtonDriveApps/sdk) para o código-fonte, licenças e condições aplicáveis ao CLI e seus componentes. A distribuição deste aplicativo não altera essas condições nem as condições de uso do serviço Proton Drive.
+The project's original code is covered by [LICENSE](LICENSE). Original CapyDock artwork is covered separately by [ASSETS_LICENSE.md](ASSETS_LICENSE.md). Neither document replaces a third party component's license or the terms of the Proton Drive service.
 
-Tauri, Nuxt, Vue, DaisyUI, Tailwind CSS, Lucide e as dependências listadas em `package-lock.json` e `Cargo.lock` mantêm suas respectivas licenças. As marcas Proton e Proton Drive pertencem aos seus titulares. Este projeto é independente.
+## Official Proton Drive CLI
 
-PDF.js (`pdfjs-dist`), Mozilla Foundation and contributors, Apache-2.0. https://github.com/mozilla/pdf.js
+The bundled `proton-drive` executable is an official Proton binary distributed without modification. Its version, HTTPS download source, platform and SHA-512 checksum are recorded in `bin/release.json`. CapyDock does not claim authorship of this executable.
 
+The [official Proton Drive SDK repository](https://github.com/ProtonDriveApps/sdk) contains the CLI and SDK sources. The license for the pinned SDK source is preserved in [bin/PROTON-SDK-LICENSE.md](bin/PROTON-SDK-LICENSE.md), including Proton AG's copyright notice. Dependencies and the CLI runtime retain their own license terms.
 
-O executável `proton-drive-computers` é uma compilação independente e identificada como `external-drive-desktop` a partir dos componentes CLI/SDK oficiais sob a licença em `bin/PROTON-SDK-LICENSE.md`, com comandos adicionais deste projeto para registrar computadores e consultar lotes de metadados. Não é um binário oficial da Proton. Fonte-base: https://github.com/ProtonDriveApps/sdk/tree/5491f2eea473acaaa86b5969774b84610a37bd46. Adaptações e procedimento de compilação: `scripts/computers/` e `scripts/build-computers.mjs`. Bun 1.3.14 (MIT) é incorporado nesse executável: https://github.com/oven-sh/bun/tree/bun-v1.3.14. Os componentes mantêm suas respectivas licenças.
+## Computers helper
+
+The `proton-drive-computers` executable is built by CapyDock from pinned official CLI and SDK sources. It adds computer registration and batched metadata commands. It identifies itself as `external-drive-desktop` and is not an official Proton binary.
+
+| Item                           | Source                                                                                                                           |
+| :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| Base SDK revision              | [5491f2eea473acaaa86b5969774b84610a37bd46](https://github.com/ProtonDriveApps/sdk/tree/5491f2eea473acaaa86b5969774b84610a37bd46) |
+| Project adaptations            | `scripts/computers/`                                                                                                             |
+| Build procedure                | `scripts/build-computers.mjs`                                                                                                    |
+| Version, revision and checksum | `bin/computers-release.json`                                                                                                     |
+| SDK license                    | `bin/PROTON-SDK-LICENSE.md`                                                                                                      |
+| Embedded Bun runtime           | [Bun 1.3.14](https://github.com/oven-sh/bun/tree/bun-v1.3.14), MIT licensed, with its own dependency notices                     |
+
+The original SDK and runtime notices continue to apply to the helper. CapyDock's MIT license covers only its original adaptations and does not replace upstream notices.
+
+## Interface and desktop dependencies
+
+Tauri, Nuxt, Vue, DaisyUI, Tailwind CSS, Lucide and all other dependencies retain their respective licenses and copyright notices. `package-lock.json` and `Cargo.lock` identify the dependency versions used by a build. Consult the license files and notices distributed with each package for its complete terms.
+
+PDF.js (`pdfjs-dist`) is developed by the Mozilla Foundation and contributors and is licensed under Apache-2.0. Its source and notices are available in the [PDF.js repository](https://github.com/mozilla/pdf.js).
+
+Lucide interface icons are third party assets. The restriction on original CapyDock artwork does not apply to them.
+
+## Release provenance
+
+Every published AppImage has a companion `build-info.json` recording the CapyDock version, source commit and embedded component metadata. `SHA256SUMS` verifies the release files. These records describe the build; they do not grant additional rights over third party components.
+
+When redistributing a permitted build, retain all applicable licenses and copyright notices and follow the separate artwork terms. Review the licenses of any dependency you add or replace.

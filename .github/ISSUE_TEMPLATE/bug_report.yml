@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a reproducible problem in CapyDock.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For security concerns, follow [SECURITY.md](https://github.com/ItsAnunesS/capydock/blob/dev/SECURITY.md). Do not post vulnerability details here.
+        Remove account details, tokens, private filenames and personal paths from any evidence.
+  - type: input
+    id: version
+    attributes:
+      label: CapyDock version
+      description: Include the CLI version if the problem involves Proton Drive.
+      placeholder: CapyDock 0.2.2, Proton CLI 0.8.0
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Linux environment
+      description: Distribution, version, desktop environment and installation method.
+      placeholder: Fedora, GNOME, AppImage through Gear Lever
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Describe a minimal example using disposable files when possible.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Additional context
+      description: Sanitized logs or screenshots, if useful. Do not attach your application data directory.

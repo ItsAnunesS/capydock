@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security policy
+    url: https://github.com/ItsAnunesS/capydock/blob/dev/SECURITY.md
+    about: Read how to request a private security contact before sharing a vulnerability.
+  - name: Build and installation guide
+    url: https://github.com/ItsAnunesS/capydock#readme
+    about: Check the supported package, setup instructions and troubleshooting.
