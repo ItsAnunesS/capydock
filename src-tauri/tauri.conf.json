@@ -32,8 +32,8 @@
       "appimage"
     ],
     "category": "Utility",
-    "shortDescription": "Sincronize seu Linux com o Proton Drive",
-    "longDescription": "CapyDock é um aplicativo independente para sincronizar arquivos no Linux. Inclui o CLI oficial da Proton com atualização verificada.",
+    "shortDescription": "Sync your Linux files with Proton Drive",
+    "longDescription": "CapyDock is an independent app for syncing files on Linux. It includes the official Proton Drive CLI with verified updates.",
     "resources": {
       "../bin/proton-drive": "bin/proton-drive",
       "../bin/release.json": "bin/release.json",
