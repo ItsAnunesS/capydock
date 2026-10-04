@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520" fill="none" role="img" aria-labelledby="title description">
+  <title id="title">CapyDock</title>
+  <desc id="description">The CapyDock capybara logo on a soft green background. Your files. In good company.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1600" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6F9F3"/>
+      <stop offset="1" stop-color="#E7F1E9"/>
+    </linearGradient>
+    <clipPath id="frame"><rect width="1600" height="520" rx="32"/></clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+    <rect width="1600" height="520" fill="url(#background)"/>
+    <circle cx="1545" cy="63" r="288" fill="#D5E5D8" opacity="0.48"/>
+    <circle cx="1600" cy="8" r="370" stroke="#B5CEC0" stroke-width="2" opacity="0.35"/>
+    <circle cx="1600" cy="8" r="430" stroke="#B5CEC0" stroke-width="2" opacity="0.24"/>
+    <path d="M0 455C220 383 325 503 583 451C830 401 1010 429 1210 470C1372 503 1494 467 1600 433V520H0Z" fill="#D6E7DA" opacity="0.55"/>
+    <path d="M0 479C250 432 379 538 660 484C879 442 1026 473 1198 502C1365 530 1498 499 1600 476" stroke="#BED5C6" stroke-width="2" opacity="0.6"/>
+    <!-- Original logo geometry from public/icon.svg. -->
+    <g transform="translate(112 116) scale(1.08)">
+      <rect x="8" y="8" width="240" height="240" rx="56" fill="#E0EEE6"/>
+      <path d="M44 170v-35c0-32 22-51 53-51h28v-8a14 14 0 0 1 28 0v10h23c19 0 36 17 36 36v17c0 13-10 23-23 23h-23v16a8 8 0 0 1-8 8h-9a8 8 0 0 1-8-8v-13H86v13a8 8 0 0 1-8 8h-9a8 8 0 0 1-8-8v-8H44Z" fill="#294C43"/>
+      <path d="M166 112h27a12 12 0 0 1 12 12v13a18 18 0 0 1-18 18h-21a15 15 0 0 1-15-15v-13a15 15 0 0 1 15-15Z" fill="#B9D3C4"/>
+      <path d="M131 81v-5a8 8 0 0 1 16 0v5" fill="#B9D3C4"/>
+      <circle cx="163" cy="112" r="5" fill="#152E28"/>
+      <path d="M190 132h7M177 145h14" stroke="#294C43" stroke-width="5" stroke-linecap="round"/>
+      <path d="M56 207h143" stroke="#A9C8B7" stroke-width="6" stroke-linecap="round"/>
+    </g>
+    <text x="443" y="170" fill="#56786A" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="600" letter-spacing="5">A HOME FOR YOUR CLOUD FILES</text>
+    <text x="434" y="289" fill="#294C43" font-family="DejaVu Sans, Arial, sans-serif" font-size="116" font-weight="700" letter-spacing="-5">CapyDock</text>
+    <text x="443" y="349" fill="#526D61" font-family="DejaVu Sans, Arial, sans-serif" font-size="32">Your files. In good company.</text>
+    <g transform="translate(1350 342)" stroke="#759986" stroke-width="2" opacity="0.65">
+      <path d="M0 19V5A5 5 0 0 1 5 0H25L34 10H67A5 5 0 0 1 72 15V55A5 5 0 0 1 67 60H5A5 5 0 0 1 0 55V19Z" fill="#EDF5EE"/>
+      <path d="M0 20H72"/>
+      <path d="M27 37A12 12 0 0 1 48 32M48 32V24M48 32H40M45 47A12 12 0 0 1 24 52M24 52V60M24 52H32" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 -3)"/>
+    </g>
+  </g>
+</svg>
