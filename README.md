@@ -116,7 +116,7 @@ Para verificar o atualizador real, baixando uma cópia oficial temporária:
 cargo run -p drive-core --example verify_update
 ```
 
-O download incorpora cerca de 112 MiB de CLI. O binário é ignorado pelo Git; `bin/release.json` registra a origem e o checksum. Execute `cli:install -- --locked` e `computers:build` antes de compilar um checkout novo. Os builds de distribuição suportam Linux x86-64. A atualização automática é **do CLI**; as releases AppImage ainda não habilitam atualização automática da GUI.
+O download incorpora cerca de 112 MiB de CLI. O binário é ignorado pelo Git; `bin/release.json` registra a origem e o checksum. Execute `cli:install -- --locked` e `computers:build` antes de compilar um checkout novo. Os builds de distribuição suportam Linux x86-64. O CLI tem atualização automática no aplicativo. A partir de **0.1.2**, o AppImage inclui o ícone do CapyDock e o canal de atualizações das releases estáveis do GitHub, reconhecidos automaticamente ao importar no **Gear Lever**. A atualização da interface é gerenciada pelo Gear Lever, conforme as preferências dele; não é necessário configurar uma URL. Para versões anteriores, importe o AppImage novo uma vez.
 
 ## Arquitetura e dados
 

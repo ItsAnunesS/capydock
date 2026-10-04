@@ -8,6 +8,7 @@ import {
   readFile,
   writeFile,
   rm,
+  symlink,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
@@ -18,6 +19,10 @@ import { setVersion, releaseFiles } from "../scripts/release/version.mjs";
 import {
   restoreEmbeddedExecutables,
   verifyEmbeddedExecutables,
+  prepareDesktopMetadata,
+  verifyDesktopMetadata,
+  verifyZsync,
+  updateInformation,
 } from "../scripts/release/appimage.mjs";
 
 const project = fileURLToPath(new URL("../", import.meta.url));
@@ -88,6 +93,83 @@ test("rejects a modified source before replacing any embedded executable", async
     /Source executable/,
   );
   assert.deepEqual(await readFile(resolve(embedded, "proton-drive")), before);
+});
+
+test("AppImage has real CapyDock icons and current metadata without changing its launcher", async (t) => {
+  const { cwd, appDir } = await embeddedFixture(t);
+  await mkdir(resolve(cwd, "src-tauri/icons"), { recursive: true });
+  for (const icon of ["icon.png", "128x128.png", "32x32.png"])
+    await copyFile(
+      resolve(project, "src-tauri/icons", icon),
+      resolve(cwd, "src-tauri/icons", icon),
+    );
+  await writeFile(
+    resolve(appDir, "CapyDock.desktop"),
+    "[Desktop Entry]\nName=Proton Drive\nIcon=proton-drive-desktop\nExec=proton-drive-desktop %U\nX-AppImage-Version=0.0.1\n\n[Desktop Action Open]\nName=Open\nExec=proton-drive-desktop\n",
+  );
+  await symlink("missing.png", resolve(appDir, ".DirIcon"));
+  await prepareDesktopMetadata(appDir, cwd, "0.1.2");
+  await verifyDesktopMetadata(appDir, cwd, "0.1.2");
+  const desktop = await readFile(resolve(appDir, "CapyDock.desktop"), "utf8");
+  assert.match(desktop, /^Exec=proton-drive-desktop %U$/m);
+  assert.match(
+    desktop,
+    /\[Desktop Action Open\]\nName=Open\nExec=proton-drive-desktop/,
+  );
+  assert.doesNotMatch(desktop, /Icon=proton-drive-desktop/);
+  await assert.rejects(
+    verifyDesktopMetadata(appDir, cwd, "0.1.3"),
+    /X-AppImage-Version/,
+  );
+  await writeFile(resolve(appDir, ".DirIcon"), "capydock.png");
+  await assert.rejects(
+    verifyDesktopMetadata(appDir, cwd, "0.1.2"),
+    /CapyDock PNG/,
+  );
+});
+
+test("AppImage updates follow this repository's stable x86-64 releases", () => {
+  assert.equal(
+    updateInformation("ItsAnunesS/capydock"),
+    "gh-releases-zsync|ItsAnunesS|capydock|latest|CapyDock_*_x86_64.AppImage.zsync",
+  );
+  for (const repository of [
+    "",
+    "owner/repo/extra",
+    "owner/repo|other",
+    "https://github.com/owner/repo",
+  ])
+    assert.throws(() => updateInformation(repository), /owner\/repository/);
+});
+
+test("zsync references the final release filename and the exact AppImage bytes", async (t) => {
+  const { cwd } = await embeddedFixture(t);
+  const name = "CapyDock_0.1.2_x86_64.AppImage";
+  const image = resolve(cwd, name);
+  const control = `${image}.zsync`;
+  const bytes = Buffer.from("AppImage contents");
+  await writeFile(image, bytes);
+  const header = `zsync: 0.6.2\nFilename: ${name}\nURL: ${name}\nLength: ${bytes.length}\nSHA-1: ${createHash("sha1").update(bytes).digest("hex")}\n\n`;
+  await writeFile(
+    control,
+    Buffer.concat([Buffer.from(header), Buffer.from([1, 2, 3])]),
+  );
+  await verifyZsync(image, control);
+  await assert.rejects(
+    verifyZsync(image, control, "CapyDock.AppImage"),
+    /Filename/,
+  );
+  await writeFile(
+    control,
+    header.replace(`URL: ${name}`, "URL: /tmp/build/CapyDock.AppImage") +
+      "data",
+  );
+  await assert.rejects(verifyZsync(image, control), /URL/);
+  await writeFile(control, header);
+  await assert.rejects(verifyZsync(image, control), /control file/);
+  await writeFile(control, header + "data");
+  await writeFile(image, "AppImage changed!");
+  await assert.rejects(verifyZsync(image, control), /SHA-1/);
 });
 
 async function fixture(t) {
@@ -182,6 +264,7 @@ async function publishingFixture(t) {
   let sums = "";
   for (const [name, content] of [
     [`CapyDock_${plan.version}_x86_64.AppImage`, "test AppImage"],
+    [`CapyDock_${plan.version}_x86_64.AppImage.zsync`, "test zsync"],
     ["build-info.json", "{}"],
   ]) {
     await writeFile(resolve(output, "assets", name), content);
@@ -330,5 +413,22 @@ test("changed artifacts and mismatched source commits block publication", async 
   const result = publish();
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /Checksum mismatch/);
+  assert.equal(git(cwd, "tag", "-l", plan.tag), "");
+});
+
+test("a missing or corrupted zsync prevents publishing a broken update channel", async (t) => {
+  const { cwd, plan, publish } = await publishingFixture(t);
+  const path = resolve(
+    cwd,
+    `release-dist/assets/CapyDock_${plan.version}_x86_64.AppImage.zsync`,
+  );
+  await writeFile(path, "corrupted update metadata");
+  const corrupt = publish();
+  assert.notEqual(corrupt.status, 0);
+  assert.match(corrupt.stderr, /Checksum mismatch/);
+  await rm(path);
+  const missing = publish();
+  assert.notEqual(missing.status, 0);
+  assert.match(missing.stderr, /Unexpected release assets/);
   assert.equal(git(cwd, "tag", "-l", plan.tag), "");
 });

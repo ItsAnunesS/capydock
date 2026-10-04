@@ -28,6 +28,7 @@ if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository || ""))
   throw new Error("Unexpected release repository.");
 const expected = [
   `CapyDock_${plan.version}_x86_64.AppImage`,
+  `CapyDock_${plan.version}_x86_64.AppImage.zsync`,
   "SHA256SUMS",
   "build-info.json",
 ].sort();

@@ -1,6 +1,6 @@
 # Builds e releases do CapyDock
 
-A primeira release pública é **v0.1.0**. O único pacote distribuído é o **AppImage para Linux x86-64**. `SHA256SUMS` e `build-info.json` acompanham o pacote para conferir integridade e origem dos componentes incorporados.
+A primeira release pública é **v0.1.0**. O único pacote distribuído é o **AppImage para Linux x86-64**. O arquivo `.AppImage.zsync` permite detectar atualizações no Gear Lever; `SHA256SUMS` e `build-info.json` conferem integridade e origem dos componentes incorporados.
 
 ## Fluxo automático
 
@@ -8,7 +8,7 @@ A primeira release pública é **v0.1.0**. O único pacote distribuído é o **A
 2. Cada push em `dev` executa checagem de versões, formatação, tipos, testes da interface, testes Rust, testes da automação de release, Clippy e compilação nativa. Não calcula uma nova versão, cria tags nem publica releases.
 3. Para publicar, integre as mudanças de `dev` em `release` por merge ou pull request. O push em `release` repete as validações, calcula a próxima versão pelos commits desde a última tag e gera o AppImage no Ubuntu 22.04. O CLI Proton é fixado em `bin/release.json` e verificado por SHA-512; o complemento Computers é compilado do commit fixado.
 4. O job de publicação recebe o artefato já validado. Cria um commit `chore(release): vX.Y.Z [skip ci]` com as versões e metadados dos binários incorporados, e avança somente `release` e a tag `vX.Y.Z` em um único push atômico, sem force push. A branch `dev` não é modificada pela publicação.
-5. Uma release em rascunho recebe o AppImage, o checksum e a origem do build. Só se torna pública após concluir os uploads. As notas são geradas dos commits desde a tag anterior.
+5. Uma release em rascunho recebe o AppImage, o `.zsync`, os checksums e a origem do build. Só se torna pública após concluir os uploads. As notas são geradas dos commits desde a tag anterior.
 
 Pull requests apenas validam e compilam, inclusive quando o destino é `release`. Somente pushes ou execuções manuais na branch `release` podem publicar. Essa restrição existe tanto no workflow quanto no script de publicação. O job de build tem permissão de leitura; somente o job final tem `contents: write`. O token é o `GITHUB_TOKEN` do próprio workflow; não há PAT ou credencial Proton nos secrets.
 
@@ -48,12 +48,15 @@ Se `release` avançar durante um build, esse build antigo não será publicado; 
 
 Se o upload falhar depois de criar a tag, use **Re-run failed jobs** na mesma execução. O artefato fica retido por 14 dias. O job confere o SHA original e a tag, e retoma apenas o rascunho correspondente. Se os artefatos expirarem, repita todos os jobs da execução original para reconstruir a mesma versão. Uma release já publicada não tem seus arquivos substituídos; retomar uma versão antiga também não a promove sobre uma versão mais recente.
 
-O AppImage não precisa de Node.js, Rust ou Bun instalados no computador de destino. A atualização automática existente continua sendo a do CLI Proton. Publicar AppImages no GitHub não instala atualizações da interface automaticamente.
+O AppImage não precisa de Node.js, Rust ou Bun instalados no computador de destino. O CLI Proton tem atualização automática no aplicativo. Desde **0.1.2**, a seção ELF `.upd_info` contém `gh-releases-zsync|ItsAnunesS|capydock|latest|CapyDock_*_x86_64.AppImage.zsync`. O Gear Lever detecta esse canal ao importar e gerencia as atualizações da interface conforme as suas preferências. Ele também lê o ícone incorporado, sem download nem configuração manual. AppImages anteriores precisam ser substituídos uma vez pelo novo pacote.
+
+O reempacotamento obtém o repositório de `GITHUB_REPOSITORY` (ou do remoto `origin` em builds locais) e gera o `.zsync` com o nome final do asset. O pipeline valida o canal incorporado, a versão do desktop entry, os PNGs reais em `.DirIcon` e `capydock.png`, além de nome, URL relativa, tamanho e SHA-1 do arquivo de atualização. O `.zsync` também entra em `SHA256SUMS`. Não renomeie os assets ao publicar.
 
 Após o Tauri reunir as bibliotecas, `npm run release:appimage` restaura os executáveis incorporados e reempacota o AppDir com o plugin de saída AppImage. Isso preserva os checksums originais: o linuxdeploy altera o RPATH de executáveis ELF, incluindo recursos independentes do aplicativo. A preparação da release extrai os binários do AppImage final e confere os metadados e ambos os SHA-512 antes de disponibilizar o artefato. `CAPYDOCK_APPIMAGE_PLUGIN` permite indicar outro caminho para o plugin baixado pelo Tauri.
 
 ## Referências
 
 - [Tauri: distribuição AppImage e escolha da base Linux](https://v2.tauri.app/distribute/appimage/)
+- [AppImage: informações incorporadas de atualização e zsync](https://docs.appimage.org/packaging-guide/optional/updates.html)
 - [GitHub: permissões e disparos de workflows pelo GITHUB_TOKEN](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
 - [Analisador de Conventional Commits](https://github.com/semantic-release/commit-analyzer)
