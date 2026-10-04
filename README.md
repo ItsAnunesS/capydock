@@ -209,7 +209,9 @@ A atividade mostra “Recuperando pasta local” e, quando terminar, “Pasta lo
 
 Em **Configurações → Aplicativo e sincronização → System tray**, ative a opção para que o **X** oculte a janela principal e mantenha a sincronização, o monitor de arquivos e a fila em segundo plano. A preferência fica salva e vale imediatamente. Por padrão, permanece desativada, inclusive em instalações anteriores.
 
-No menu do ícone da bandeja, **Abrir CapyDock** restaura a janela e **Sair** encerra o processo. Abrir novamente pelo atalho também restaura a mesma instância. As janelas auxiliares do Proton continuam fechando normalmente. Se a criação do ícone falhar, a opção fica indisponível e o X mantém o comportamento normal de fechamento. No Linux, a apresentação do ícone depende do suporte a AppIndicator da sessão desktop.
+O menu da bandeja acompanha o idioma do aplicativo e oferece **Abrir CapyDock**, **Sincronizar agora**, **Pausar/retomar sincronização**, **Abrir pasta local**, **Configurações** e **Sair**. O submenu de pastas lista os pareamentos atuais, inclusive os desativados. Sincronizar fica indisponível sem conexão, sem pastas ativas, durante a pausa ou quando já existe uma sincronização pendente. As ações usam a mesma fila e as mesmas preferências da interface; retomar também verifica as alterações acumuladas durante a pausa.
+
+**Configurações** restaura a janela diretamente nessa tela, mesmo se o frontend ainda estiver iniciando. Abrir novamente pelo atalho restaura a mesma instância. As janelas auxiliares do Proton continuam fechando normalmente. O ícone da capivara é incorporado como **RGBA de 8 bits**, formato exigido pelo tray, e mantido em um diretório de cache exclusivo por execução. Isso também evita que outro processo remova seu PNG. Se a criação do ícone falhar, a opção fica indisponível e o X mantém o comportamento normal de fechamento. No Linux, a apresentação do ícone depende do suporte a AppIndicator da sessão desktop.
 
 ## Revisão da experiência
 

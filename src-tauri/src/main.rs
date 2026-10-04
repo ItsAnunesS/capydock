@@ -3,6 +3,7 @@
 mod catalog;
 mod desktop;
 mod scheduler;
+mod tray;
 
 use drive_core::{
     atomic_json,
@@ -32,11 +33,7 @@ struct AppState {
     data: PathBuf,
     cli: Cli,
     computers: Cli,
-}
-
-struct TrayLabels {
-    show: tauri::menu::MenuItem<tauri::Wry>,
-    quit: tauri::menu::MenuItem<tauri::Wry>,
+    tray_navigation: Mutex<Option<&'static str>>,
 }
 
 #[derive(Clone, Default, Serialize)]
@@ -64,6 +61,19 @@ struct View {
 }
 
 impl AppState {
+    fn set_sync_paused(&self, paused: bool) -> Result<()> {
+        {
+            let mut config = self.config.lock().unwrap();
+            let mut next = config.clone();
+            next.paused = paused;
+            atomic_json(&self.data.join("settings.json"), &next)?;
+            *config = next;
+        }
+        if paused {
+            self.queue.cancel_syncs(true);
+        }
+        Ok(())
+    }
     fn save(&self) -> Result<()> {
         atomic_json(
             &self.data.join("settings.json"),
@@ -537,7 +547,6 @@ fn set_preferences(
 fn set_locale(
     app: tauri::AppHandle,
     state: State<'_, Arc<AppState>>,
-    tray: State<'_, TrayLabels>,
     locale: Locale,
 ) -> Result<()> {
     // Persist before publishing, keeping other preferences and pending jobs intact.
@@ -548,11 +557,13 @@ fn set_locale(
         atomic_json(&state.data.join("settings.json"), &next)?;
         *config = next;
     }
-    let (show, quit) = locale.tray_labels();
-    let _ = tray.show.set_text(show);
-    let _ = tray.quit.set_text(quit);
     let _ = app.emit("drive-changed", ());
     Ok(())
+}
+
+#[tauri::command]
+fn take_tray_navigation(state: State<'_, Arc<AppState>>) -> Option<&'static str> {
+    state.tray_navigation.lock().unwrap().take()
 }
 
 async fn run_pairs(
@@ -1298,25 +1309,10 @@ fn main() {
                 computers: Cli {
                     binary: computers_binary,
                 },
+                tray_navigation: Mutex::new(None),
             });
             app.manage(state.clone());
-            let (show_label, quit_label) = state.config.lock().unwrap().locale.tray_labels();
-            let show = tauri::menu::MenuItem::with_id(app, "show", show_label, true, None::<&str>)?;
-            let quit = tauri::menu::MenuItem::with_id(app, "quit", quit_label, true, None::<&str>)?;
-            let menu = tauri::menu::Menu::with_items(app, &[&show, &quit])?;
-            app.manage(TrayLabels { show, quit });
-            let mut tray = tauri::tray::TrayIconBuilder::with_id(MAIN_TRAY_ID)
-                .menu(&menu)
-                .tooltip("CapyDock")
-                .on_menu_event(|app, event| match event.id.as_ref() {
-                    "show" => show_main_window(app),
-                    "quit" => app.exit(0),
-                    _ => (),
-                });
-            if let Some(icon) = app.default_window_icon() {
-                tray = tray.icon(icon.clone());
-            }
-            if let Err(error) = tray.build(app) {
+            if let Err(error) = tray::create(app.handle()) {
                 eprintln!("System tray unavailable: {error}");
             }
             let handle = app.handle().clone();
@@ -1341,6 +1337,7 @@ fn main() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            take_tray_navigation,
             register_computer,
             computer_name,
             list_library,

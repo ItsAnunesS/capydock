@@ -34,6 +34,19 @@ const removeDialog = ref<HTMLDialogElement>();
 const connecting = ref(false);
 const updating = ref(false);
 const searchInput = ref<HTMLInputElement>();
+useTrayNavigation(
+  (target) => {
+    showPair.value = false;
+    showLibrary.value = false;
+    removeDialog.value?.close();
+    removing.value = undefined;
+    page.value = target;
+    nextTick(() =>
+      document.getElementById("main-content")?.focus({ preventScroll: true }),
+    );
+  },
+  (error) => toast(error, true),
+);
 const nav: { id: Page; label: string; icon: IconName }[] = [
   { id: "overview", label: "Visão geral", icon: "LayoutDashboard" },
   { id: "folders", label: "Pastas sincronizadas", icon: "Folder" },
