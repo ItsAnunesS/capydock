@@ -25,7 +25,7 @@ const release = JSON.parse(
 );
 const cli = await readFile(resolve(root, "bin/proton-drive"));
 if (createHash("sha512").update(cli).digest("hex") !== release.sha512)
-  throw new Error("O CLI incorporado não confere com o checksum oficial.");
+  throw new Error("The bundled CLI does not match its official checksum.");
 
 const computersRelease = JSON.parse(
   await readFile(resolve(root, "bin/computers-release.json"), "utf8"),
@@ -35,9 +35,7 @@ if (
     .update(await readFile(resolve(root, "bin/proton-drive-computers")))
     .digest("hex") !== computersRelease.sha512
 )
-  throw new Error(
-    "O complemento Computers não confere com o checksum da compilação.",
-  );
+  throw new Error("The Computers helper does not match its build checksum.");
 
 async function copy(source, destination, executable = false) {
   await mkdir(dirname(destination), { recursive: true });
@@ -54,11 +52,13 @@ async function link(target, destination, previous) {
     const info = await lstat(destination);
     if (!info.isSymbolicLink())
       throw new Error(
-        `Um arquivo já existe em ${destination}; instalação preservada.`,
+        `A file already exists at ${destination}; the installation was preserved.`,
       );
     const current = await readlink(destination);
     if (current !== target && current !== previous)
-      throw new Error(`O link ${destination} pertence a outra instalação.`);
+      throw new Error(
+        `The link ${destination} belongs to another installation.`,
+      );
     await unlink(destination);
   } catch (e) {
     if (e.code !== "ENOENT") throw e;
@@ -88,6 +88,8 @@ await copy(
   resolve(root, "bin/PROTON-SDK-LICENSE.md"),
   resolve(installed, "bin/PROTON-SDK-LICENSE.md"),
 );
+for (const notice of ["LICENSE", "ASSETS_LICENSE.md", "THIRD_PARTY_NOTICES.md"])
+  await copy(resolve(root, notice), resolve(installed, notice));
 await copy(
   resolve(root, "THIRD_PARTY_NOTICES.md"),
   resolve(installed, "THIRD_PARTY_NOTICES.md"),
@@ -139,5 +141,5 @@ await writeFile(
   `[Desktop Entry]\nType=Application\nName=CapyDock\nComment=Sync your folders with Proton Drive\nComment[pt]=Sincronize suas pastas com o Proton Drive\nComment[pt_BR]=Sincronize suas pastas com o Proton Drive\nComment[es]=Sincroniza tus carpetas con Proton Drive\nExec="${execPath}"\nIcon=${resolve(installed, "icon.png")}\nTerminal=false\nCategories=Network;FileTransfer;\nStartupWMClass=proton-drive-desktop\n`,
 );
 console.log(
-  `Aplicativo: ${installed}/proton-drive-desktop\nCLI atualizado pelo app: ${managed}/proton-drive\nComandos: capydock e proton-drive (proton-drive-desktop continua disponível)\nAtalho adicionado ao menu de aplicativos.`,
+  `Application: ${installed}/proton-drive-desktop\nCLI managed by the app: ${managed}/proton-drive\nCommands: capydock and proton-drive (proton-drive-desktop remains available)\nShortcut added to the applications menu.`,
 );

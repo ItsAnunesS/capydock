@@ -25,6 +25,21 @@ const components = [
   ["computersHelper", "computers-release.json", "proton-drive-computers"],
 ];
 const resourcePath = "usr/lib/CapyDock/bin";
+const projectNotices = [
+  "LICENSE",
+  "ASSETS_LICENSE.md",
+  "THIRD_PARTY_NOTICES.md",
+];
+
+export async function verifyBundledNotices(appDir, cwd = process.cwd()) {
+  for (const notice of projectNotices) {
+    const bundled = resolve(appDir, "usr/lib/CapyDock", notice);
+    if (!(await readFile(bundled)).equals(await readFile(resolve(cwd, notice))))
+      throw new Error(
+        `Bundled project notice differs from its source: ${notice}`,
+      );
+  }
+}
 
 export function updateInformation(repository) {
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository || ""))
@@ -263,6 +278,7 @@ export async function verifyAppImage(path, cwd = process.cwd()) {
     // The type-2 runtime accepts only one extraction pattern per invocation.
     for (const pattern of [
       `${resourcePath}/*`,
+      ...projectNotices.map((notice) => `usr/lib/CapyDock/${notice}`),
       "*.desktop",
       ".DirIcon",
       "capydock.png",
@@ -279,6 +295,7 @@ export async function verifyAppImage(path, cwd = process.cwd()) {
       cwd,
       await bundleVersion(cwd),
     );
+    await verifyBundledNotices(resolve(directory, "squashfs-root"), cwd);
     return await verifyEmbeddedExecutables(
       resolve(directory, "squashfs-root"),
       cwd,

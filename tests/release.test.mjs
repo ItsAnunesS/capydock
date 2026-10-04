@@ -23,6 +23,7 @@ import {
   verifyDesktopMetadata,
   verifyZsync,
   updateInformation,
+  verifyBundledNotices,
 } from "../scripts/release/appimage.mjs";
 
 const project = fileURLToPath(new URL("../", import.meta.url));
@@ -58,6 +59,31 @@ async function embeddedFixture(t) {
   }
   return { cwd, appDir, embedded };
 }
+
+test("packaging rejects missing or changed code, artwork and third party notices", async (t) => {
+  const { cwd, appDir } = await embeddedFixture(t);
+  const notices = ["LICENSE", "ASSETS_LICENSE.md", "THIRD_PARTY_NOTICES.md"];
+  for (const notice of notices) {
+    await copyFile(resolve(project, notice), resolve(cwd, notice));
+    await copyFile(
+      resolve(project, notice),
+      resolve(appDir, "usr/lib/CapyDock", notice),
+    );
+  }
+  await verifyBundledNotices(appDir, cwd);
+  for (const notice of notices) {
+    const bundled = resolve(appDir, "usr/lib/CapyDock", notice);
+    await writeFile(bundled, "Unexpected notice");
+    await assert.rejects(
+      verifyBundledNotices(appDir, cwd),
+      /Bundled project notice/,
+    );
+    await rm(bundled);
+    await assert.rejects(verifyBundledNotices(appDir, cwd), /ENOENT/);
+    await copyFile(resolve(project, notice), bundled);
+  }
+  await verifyBundledNotices(appDir, cwd);
+});
 
 test("detects linuxdeploy changes and restores both embedded executables exactly", async (t) => {
   const { cwd, appDir, embedded } = await embeddedFixture(t);

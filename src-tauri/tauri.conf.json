@@ -39,6 +39,8 @@
       "../bin/release.json": "bin/release.json",
       "../bin/PROTON-SDK-LICENSE.md": "bin/PROTON-SDK-LICENSE.md",
       "../THIRD_PARTY_NOTICES.md": "THIRD_PARTY_NOTICES.md",
+      "../LICENSE": "LICENSE",
+      "../ASSETS_LICENSE.md": "ASSETS_LICENSE.md",
       "../bin/proton-drive-computers": "bin/proton-drive-computers",
       "../bin/computers-release.json": "bin/computers-release.json"
     },
