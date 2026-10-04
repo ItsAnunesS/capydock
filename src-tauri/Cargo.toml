@@ -1,6 +1,6 @@
 [package]
 name = "proton-drive-desktop"
-version = "0.2.1"
+version = "0.2.2"
 description = "CapyDock: a Linux desktop app with Proton Drive synchronization"
 edition = "2021"
 
