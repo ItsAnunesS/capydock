@@ -22,11 +22,11 @@ const sourceLabel = computed(() =>
   props.pair.remotePath.startsWith("/devices/")
     ? props.pair.remotePath.replace("/devices/", t("Computers · "))
     : props.pair.remotePath === "/photos"
-      ? t("Proton Photos · todas as fotos")
+      ? t("Proton Photos · all photos")
       : props.pair.remotePath === "/albums"
-        ? t("Proton Photos · todos os álbuns")
+        ? t("Proton Photos · all albums")
         : props.pair.remotePath.startsWith("/albums/")
-          ? t("Álbum · {0}", [props.pair.name])
+          ? t("Album · {0}", [props.pair.name])
           : props.pair.remotePath,
 );
 const sourceIcon = computed(() =>
@@ -41,9 +41,9 @@ const sourceIcon = computed(() =>
 const mode = computed(
   () =>
     ({
-      bidirectional: t("Nos dois sentidos"),
-      upload: t("Computador → Drive"),
-      download: t("Drive → Computador"),
+      bidirectional: t("Both ways"),
+      upload: t("Computer → Drive"),
+      download: t("Drive → Computer"),
     })[props.pair.mode],
 );
 const lastRun = computed(() =>
@@ -54,7 +54,7 @@ const lastRun = computed(() =>
         hour: "2-digit",
         minute: "2-digit",
       })
-    : t("Aguardando primeira sincronização"),
+    : t("Waiting for first sync"),
 );
 </script>
 <template>
@@ -69,21 +69,21 @@ const lastRun = computed(() =>
         <span class="pair-state" :class="{ working: syncing }"
           ><span class="status-dot" />{{
             syncing
-              ? t("Sincronizando")
+              ? t("Syncing")
               : queued
-                ? t("Na fila")
+                ? t("Queued")
                 : !pair.enabled || paused
-                  ? t("Pausada")
+                  ? t("Paused")
                   : !connected
-                    ? t("Aguardando conexão")
-                    : t("Automática")
+                    ? t("Waiting for connection")
+                    : t("Automatic")
           }}</span
         >
       </div>
       <details class="dropdown dropdown-end pair-menu">
         <summary
           class="btn btn-ghost btn-square btn-sm"
-          :aria-label="t('Opções de {0}', [pair.name])"
+          :aria-label="t('Options for {0}', [pair.name])"
         >
           <AppIcon name="Ellipsis" />
         </summary>
@@ -93,18 +93,19 @@ const lastRun = computed(() =>
           <li>
             <button :disabled="changing" @click="$emit('edit')">
               <AppIcon name="Settings2" :size="16" />
-              {{ t("Editar sincronização") }}
+              {{ t("Edit sync") }}
             </button>
           </li>
           <li>
             <button @click="$emit('open')">
               <AppIcon name="FolderOpen" :size="16" />
-              {{ t("Abrir pasta local") }}
+              {{ t("Open local folder") }}
             </button>
           </li>
           <li>
             <button @click="$emit('recovery')">
-              <AppIcon name="History" :size="16" /> {{ t("Abrir recuperação") }}
+              <AppIcon name="History" :size="16" />
+              {{ t("Open recovery folder") }}
             </button>
           </li>
           <li>
@@ -113,7 +114,7 @@ const lastRun = computed(() =>
               class="text-error"
               @click="$emit('remove')"
             >
-              <AppIcon name="Trash2" :size="16" /> {{ t("Remover pareamento") }}
+              <AppIcon name="Trash2" :size="16" /> {{ t("Remove pairing") }}
             </button>
           </li>
         </ul>
@@ -132,11 +133,11 @@ const lastRun = computed(() =>
       <span><AppIcon name="ArrowLeftRight" :size="14" />{{ mode }}</span
       ><span
         :title="
-          t('No PC: ao alterar. No Drive: verificação a cada {0} min.', [
+          t('On PC: on change. In Drive: check every {0} min.', [
             pair.intervalMinutes,
           ])
         "
-        ><AppIcon name="RefreshCw" :size="14" /> {{ t("Ao alterar") }}
+        ><AppIcon name="RefreshCw" :size="14" /> {{ t("On change") }}
       </span>
     </div>
     <div class="pair-bottom">
@@ -146,8 +147,8 @@ const lastRun = computed(() =>
           class="btn btn-ghost btn-square btn-sm"
           :aria-label="
             pair.enabled
-              ? t('Pausar {0}', [pair.name])
-              : t('Ativar {0}', [pair.name])
+              ? t('Pause {0}', [pair.name])
+              : t('Enable {0}', [pair.name])
           "
           :disabled="changing"
           @click="$emit('toggle')"
@@ -155,12 +156,8 @@ const lastRun = computed(() =>
           <AppIcon :name="pair.enabled ? 'Pause' : 'Play'" :size="16" /></button
         ><button
           class="btn btn-ghost btn-square btn-sm"
-          :aria-label="t('Sincronizar {0}', [pair.name])"
-          :title="
-            queued
-              ? t('Sincronização na fila')
-              : t('Adicionar sincronização à fila')
-          "
+          :aria-label="t('Sync {0}', [pair.name])"
+          :title="queued ? t('Sync queued') : t('Add sync to queue')"
           :disabled="queued || !pair.enabled || !connected"
           @click="$emit('sync')"
         >

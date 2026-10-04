@@ -17,7 +17,7 @@ const metadata = resolve(root, "bin/release.json");
 const platform =
   process.arch === "arm64" ? "linux/arm64" : "linux/x64-baseline";
 if (process.platform !== "linux" || !["x64", "arm64"].includes(process.arch))
-  throw new Error("Este instalador suporta Linux x64 e ARM64.");
+  throw new Error("This installer supports Linux x64 and ARM64.");
 const request = async (url) => {
   const parsed = new URL(url);
   if (
@@ -25,12 +25,12 @@ const request = async (url) => {
     parsed.hostname !== "proton.me" ||
     !parsed.pathname.startsWith("/download/drive/cli/")
   )
-    throw new Error("Origem de download inválida.");
+    throw new Error("Invalid download source.");
   const response = await fetch(url, {
     redirect: "error",
     signal: AbortSignal.timeout(180_000),
   });
-  if (!response.ok) throw new Error(`Download falhou: HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`Download failed: HTTP ${response.status}`);
   return response;
 };
 await mkdir(dirname(destination), { recursive: true });
@@ -39,7 +39,7 @@ let file;
 if (process.argv.includes("--locked")) {
   const locked = JSON.parse(await readFile(metadata, "utf8"));
   if (locked.platform !== platform)
-    throw new Error("O CLI fixado pertence a outra arquitetura.");
+    throw new Error("The pinned CLI targets a different architecture.");
   release = { Version: locked.version };
   file = { Url: locked.url, Sha512CheckSum: locked.sha512 };
 } else {
@@ -50,11 +50,13 @@ if (process.argv.includes("--locked")) {
   file = release?.Files.find((item) => item.Platform === platform);
 }
 if (!file || !/^[a-f0-9]{128}$/i.test(file.Sha512CheckSum))
-  throw new Error("Release oficial sem checksum ou plataforma suportada.");
+  throw new Error(
+    "The official release has no checksum or supported platform.",
+  );
 const bytes = Buffer.from(await (await request(file.Url)).arrayBuffer());
 const hash = createHash("sha512").update(bytes).digest("hex");
 if (hash !== file.Sha512CheckSum.toLowerCase())
-  throw new Error("SHA-512 inválido; binário rejeitado.");
+  throw new Error("Invalid SHA-512; binary rejected.");
 const temporary = destination + ".download";
 try {
   await writeFile(temporary, bytes, { mode: 0o755 });
@@ -64,7 +66,7 @@ try {
     timeout: 20_000,
   }).trim();
   if (!version.includes(release.Version))
-    throw new Error("A versão do binário difere do manifesto.");
+    throw new Error("The binary version does not match the manifest.");
   await rename(temporary, destination);
   await writeFile(
     metadata,
@@ -74,7 +76,7 @@ try {
       2,
     ) + "\n",
   );
-  console.log(`${version}\nInstalado: ${destination}\nSHA-512 verificado.`);
+  console.log(`${version}\nInstalled: ${destination}\nSHA-512 verified.`);
 } finally {
   await rm(temporary, { force: true });
 }

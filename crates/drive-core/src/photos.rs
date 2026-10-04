@@ -80,15 +80,18 @@ pub async fn synchronize_photos(
     progress: impl Fn(&str, &str),
 ) -> Result<SyncReport> {
     if pair.propagate_deletions {
-        return Err("Fotos e álbuns preservam exclusões; não habilite propagação neste tipo de sincronização.".into());
+        return Err(
+            "Photos and albums preserve deletions; do not enable propagation for this sync type."
+                .into(),
+        );
     }
     let all_albums = pair.remote_path == "/albums";
     if all_albums && pair.mode != SyncMode::Download {
-        return Err("Todos os álbuns suportam cópia contínua do Drive para o PC. Selecione um álbum para enviar novas fotos.".into());
+        return Err("All albums support a continuous copy from Drive to PC. Select an album to upload new photos.".into());
     }
     let root = Path::new(&pair.local_path);
     if !root.is_absolute() || !root.is_dir() {
-        return Err("A pasta local não está disponível.".into());
+        return Err("Local folder is unavailable.".into());
     }
     safe_join(root, "")?;
     let root = fs::canonicalize(root).map_err(|e| e.to_string())?;
@@ -100,7 +103,7 @@ pub async fn synchronize_photos(
     let local = scan_local(&root)?;
     let mut remote = BTreeMap::new();
     let mut directories = Vec::new();
-    progress("scan", "Carregando fotos e álbuns");
+    progress("scan", "Loading photos and albums");
     let sources = if all_albums {
         cli.albums().await?
     } else {
@@ -116,7 +119,7 @@ pub async fn synchronize_photos(
     };
     for (folder, source) in contexts {
         if cancel.load(Ordering::Relaxed) {
-            return Err("Sincronização interrompida.".into());
+            return Err("Sync interrupted.".into());
         }
         if !folder.is_empty() {
             directories.push(folder.clone());
@@ -137,7 +140,7 @@ pub async fn synchronize_photos(
                 .map(|(key, _)| key.clone())
                 .unwrap_or(generated);
             if remote.insert(relative, (identity, photo)).is_some() {
-                return Err("Nomes locais duplicados na biblioteca.".into());
+                return Err("Duplicate local names in the library.".into());
             }
         }
     }
@@ -151,7 +154,7 @@ pub async fn synchronize_photos(
     fs::create_dir_all(&internal).map_err(|e| e.to_string())?;
     for (relative, (identity, entry)) in &remote {
         if cancel.load(Ordering::Relaxed) {
-            return Err("Sincronização interrompida.".into());
+            return Err("Sync interrupted.".into());
         }
         let path = safe_join(&root, relative)?;
         let current = local.get(relative);
@@ -185,7 +188,7 @@ pub async fn synchronize_photos(
             progress(
                 "conflict",
                 &crate::i18n::message(
-                    "{0}: foto local alterada; salve com outro nome para enviar uma nova foto",
+                    "{0}: local photo changed; save with another name to upload a new photo",
                     &[serde_json::json!(relative.to_string())],
                 ),
             );
@@ -196,7 +199,7 @@ pub async fn synchronize_photos(
             progress(
                 "conflict",
                 &crate::i18n::message(
-                    "{0}: remoção local preservada; original mantido no Proton",
+                    "{0}: local removal preserved; original kept in Proton",
                     &[serde_json::json!(relative.to_string())],
                 ),
             );
@@ -233,7 +236,7 @@ pub async fn synchronize_photos(
             progress(
                 "conflict",
                 &crate::i18n::message(
-                    "{0}: não está mais nesta biblioteca; cópia local preservada ({1})",
+                    "{0}: no longer in this library; local copy preserved ({1})",
                     &[
                         serde_json::json!(relative.to_string()),
                         serde_json::json!(old.remote_path.to_string()),
@@ -252,16 +255,16 @@ pub async fn synchronize_photos(
                 continue;
             }
             if cancel.load(Ordering::Relaxed) {
-                return Err("Sincronização interrompida.".into());
+                return Err("Sync interrupted.".into());
             }
             let path = safe_join(&root, relative)?;
             let stage = tempfile::tempdir_in(&internal).map_err(|e| e.to_string())?;
-            let name = path.file_name().ok_or("Nome inválido.")?;
+            let name = path.file_name().ok_or("Invalid name.")?;
             let stable = stage.path().join(name);
             fs::copy(&path, &stable).map_err(|e| e.to_string())?;
             if fingerprint(&stable)? != *current {
                 return Err(crate::i18n::message(
-                    "{0} mudou durante a leitura.",
+                    "{0} changed while reading.",
                     &[serde_json::json!(relative.to_string())],
                 ));
             }
@@ -272,7 +275,7 @@ pub async fn synchronize_photos(
                     "upload",
                     "-c",
                     "skip",
-                    stable.to_str().ok_or("Caminho inválido")?,
+                    stable.to_str().ok_or("Invalid path")?,
                     "--json",
                 ],
                 3600,
@@ -292,7 +295,10 @@ pub async fn synchronize_photos(
                 })
                 .collect();
             if candidates.len() != 1 {
-                return Err(crate::i18n::message("{0}: não foi possível identificar uma única foto enviada; original preservado.", &[serde_json::json!(relative.to_string())]));
+                return Err(crate::i18n::message(
+                    "{0}: couldn't identify a unique uploaded photo; original preserved.",
+                    &[serde_json::json!(relative.to_string())],
+                ));
             }
             let entry = &candidates[0];
             if pair.remote_path.starts_with("/albums/") {
@@ -313,7 +319,7 @@ pub async fn synchronize_photos(
                     .iter()
                     .any(|photo| photo.uid == entry.uid)
                 {
-                    return Err("O Proton não confirmou a inclusão no álbum.".into());
+                    return Err("Proton did not confirm addition to the album.".into());
                 }
             }
             history.insert(

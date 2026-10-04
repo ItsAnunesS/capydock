@@ -37,7 +37,7 @@ const actual = execFileSync("git", ["rev-parse", "HEAD"], {
   encoding: "utf8",
 }).trim();
 if (actual !== commit)
-  throw new Error("O SDK precisa estar no commit fixado: " + commit);
+  throw new Error("The SDK must use the pinned commit: " + commit);
 run(bun, ["install", "--frozen-lockfile"], resolve(source, "cli"));
 // Resolve dependencies of the linked SDK/account sources from the same locked install.
 if (!existsSync(resolve(source, "node_modules")))
@@ -91,4 +91,4 @@ await writeFile(
     2,
   ) + "\n",
 );
-console.log("Complemento Computers compilado: " + binary);
+console.log("Computers helper built: " + binary);

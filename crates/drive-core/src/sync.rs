@@ -25,17 +25,17 @@ pub fn safe_join(root: &Path, relative: &str) -> Result<PathBuf> {
         .file_type()
         .is_symlink()
     {
-        return Err("A pasta raiz não pode ser um link simbólico.".into());
+        return Err("The root folder cannot be a symbolic link.".into());
     }
     for component in Path::new(relative).components() {
         let Component::Normal(name) = component else {
-            return Err("Caminho fora da pasta sincronizada.".into());
+            return Err("Path is outside the synced folder.".into());
         };
-        validate_name(name.to_str().ok_or("Nome de arquivo não UTF-8.")?)?;
+        validate_name(name.to_str().ok_or("File name is not UTF-8.")?)?;
         result.push(name);
         match fs::symlink_metadata(&result) {
             Ok(meta) if meta.file_type().is_symlink() => {
-                return Err("Links simbólicos não são sincronizados.".into())
+                return Err("Symbolic links are not synced.".into())
             }
             Err(e) if e.kind() != std::io::ErrorKind::NotFound => return Err(e.to_string()),
             _ => (),
@@ -54,7 +54,7 @@ pub fn fingerprint(path: &Path) -> Result<Fingerprint> {
         });
     }
     if !metadata.is_file() {
-        return Err("Apenas arquivos regulares podem ser sincronizados.".into());
+        return Err("Only regular files can be synced.".into());
     }
     let mut file = fs::File::open(path).map_err(|e| e.to_string())?;
     let mut hasher = Sha256::new();
@@ -68,7 +68,7 @@ pub fn fingerprint(path: &Path) -> Result<Fingerprint> {
     }
     let after = file.metadata().map_err(|e| e.to_string())?;
     if metadata.len() != after.len() || metadata.modified().ok() != after.modified().ok() {
-        return Err("Arquivo alterado durante a leitura; tente no próximo ciclo.".into());
+        return Err("File changed while reading; try in the next cycle.".into());
     }
     Ok(Fingerprint {
         hash: format!("{:x}", hasher.finalize()),
@@ -107,7 +107,7 @@ pub fn scan_local(root: &Path) -> Result<BTreeMap<String, Fingerprint>> {
             .strip_prefix(root)
             .map_err(|e| e.to_string())?
             .to_str()
-            .ok_or("Nome não UTF-8.")?
+            .ok_or("Name is not UTF-8.")?
             .to_string();
         safe_join(root, &relative)?;
         result.insert(relative, fingerprint(entry.path())?);
@@ -124,7 +124,7 @@ pub async fn scan_remote(
     let mut pending = vec![root.to_owned()];
     while let Some(path) = pending.pop() {
         if cancel.load(Ordering::Relaxed) {
-            return Err("Sincronização interrompida entre operações.".into());
+            return Err("Sync interrupted between operations.".into());
         }
         for entry in cli.list(&path).await? {
             if ignored(&entry.name) {
@@ -133,18 +133,16 @@ pub async fn scan_remote(
             let relative = entry
                 .path
                 .strip_prefix(&format!("{root}/"))
-                .ok_or("Caminho remoto inválido.")?
+                .ok_or("Invalid remote path.")?
                 .to_owned();
             if relative.split('/').count() > 100 || result.len() >= 100_000 {
-                return Err("A pasta excede o limite de 100 níveis ou 100.000 itens.".into());
+                return Err("Folder exceeds the limit of 100 levels or 100,000 items.".into());
             }
             if entry.directory {
                 pending.push(entry.path.clone());
             }
             if result.insert(relative, entry).is_some() {
-                return Err(
-                    "Nomes duplicados no Drive; renomeie os arquivos antes de sincronizar.".into(),
-                );
+                return Err("Duplicate names in Drive; rename the files before syncing.".into());
             }
         }
     }
@@ -167,7 +165,7 @@ pub async fn synchronize(
     if restoring {
         effective.propagate_deletions = false;
         effective.mode = SyncMode::Download;
-        progress("recovery", &crate::i18n::message("Recuperando pasta local: {0}. Restaurando arquivos do Drive sem propagar exclusões.", &[serde_json::json!(pair.local_path)]));
+        progress("recovery", &crate::i18n::message("Recovering local folder: {0}. Restoring files from Drive without propagating deletions.", &[serde_json::json!(pair.local_path)]));
     }
     let result = if pair.remote_path == "/photos" || pair.remote_path.starts_with("/albums") {
         crate::photos::synchronize_photos(cli, &effective, state_file, cancel, restoring, &progress)
@@ -184,7 +182,7 @@ pub async fn synchronize(
         if restoring {
             progress(
                 "recovery",
-                "Pasta local recuperada. Sincronização automática retomada.",
+                "Local folder recovered. Automatic sync resumed.",
             );
         }
     }
@@ -204,18 +202,18 @@ async fn synchronize_files(
     let root = Path::new(&pair.local_path);
     if !root.is_absolute() || !root.is_dir() {
         return Err(
-            "A pasta local não está disponível. Reconecte o disco ou selecione outra pasta.".into(),
+            "Local folder is unavailable. Reconnect the disk or select another folder.".into(),
         );
     }
     safe_join(root, "")?;
     let root = fs::canonicalize(root).map_err(|e| e.to_string())?;
-    progress("scan", "Comparando arquivos locais e remotos");
+    progress("scan", "Comparing local and remote files");
     let local = scan_local(&root)?;
     let remote = scan_remote(cli, &pair.remote_path, cancel).await?;
     let mut snapshot: Snapshot = match fs::read(state_file) {
         Ok(data) => serde_json::from_slice(&data).map_err(|e| {
             crate::i18n::message(
-                "Histórico de sincronização inválido: {0}",
+                "Invalid sync history: {0}",
                 &[crate::i18n::nested(e.to_string())],
             )
         })?,
@@ -233,7 +231,7 @@ async fn synchronize_files(
     let mut report = SyncReport::default();
     for relative in keys {
         if cancel.load(Ordering::Relaxed) {
-            return Err("Sincronização interrompida entre operações.".into());
+            return Err("Sync interrupted between operations.".into());
         }
         if blocked
             .iter()
@@ -250,7 +248,7 @@ async fn synchronize_files(
             progress(
                 "online",
                 &crate::i18n::message(
-                    "{0}: disponível no editor Proton; exportação offline não suportada pelo CLI",
+                    "{0}: available in the Proton editor; offline export is not supported by the CLI",
                     &[serde_json::json!(relative.to_string())],
                 ),
             );
@@ -321,7 +319,7 @@ async fn synchronize_files(
                 progress(
                     "conflict",
                     &crate::i18n::message(
-                        "{0}: cópias preservadas; revise as alterações nos dois lados",
+                        "{0}: copies preserved; review changes on both sides",
                         &[serde_json::json!(relative.to_string())],
                     ),
                 );
@@ -342,16 +340,14 @@ async fn synchronize_files(
             }
             Action::Upload => {
                 progress("upload", &relative);
-                let expected = l.ok_or("Arquivo local ausente.")?;
+                let expected = l.ok_or("Local file missing.")?;
                 if fingerprint(&path)? != *expected {
                     return Err(crate::i18n::message(
-                        "{0} mudou durante a sincronização.",
+                        "{0} changed during sync.",
                         &[serde_json::json!(relative.to_string())],
                     ));
                 }
-                let (parent, name) = remote_path
-                    .rsplit_once('/')
-                    .ok_or("Caminho remoto inválido.")?;
+                let (parent, name) = remote_path.rsplit_once('/').ok_or("Invalid remote path.")?;
                 if expected.directory {
                     cli.run(
                         &["filesystem", "create-folder", parent, name, "--json"],
@@ -365,14 +361,14 @@ async fn synchronize_files(
                     fs::copy(&path, &staged).map_err(|e| e.to_string())?;
                     if fingerprint(&staged)? != *expected {
                         return Err(crate::i18n::message(
-                            "{0} mudou durante a cópia.",
+                            "{0} changed while copying.",
                             &[serde_json::json!(relative.to_string())],
                         ));
                     }
                     if let Some(previous) = r {
                         if cli.info(&remote_path).await?.revision != previous.revision {
                             return Err(crate::i18n::message(
-                                "{0} mudou no Drive; sincronize novamente.",
+                                "{0} changed in Drive; sync again.",
                                 &[serde_json::json!(relative.to_string())],
                             ));
                         }
@@ -390,7 +386,7 @@ async fn synchronize_files(
                             strategy,
                             "-d",
                             "merge",
-                            staged.to_str().ok_or("Caminho inválido.")?,
+                            staged.to_str().ok_or("Invalid path.")?,
                             parent,
                             "--json",
                         ],
@@ -405,7 +401,7 @@ async fn synchronize_files(
                     })
                 {
                     return Err(crate::i18n::message(
-                        "{0}: conteúdo enviado não pôde ser confirmado; histórico preservado.",
+                        "{0}: uploaded content could not be confirmed; history preserved.",
                         &[serde_json::json!(relative.to_string())],
                     ));
                 }
@@ -420,7 +416,7 @@ async fn synchronize_files(
             }
             Action::Download => {
                 progress("download", &relative);
-                let entry = r.ok_or("Arquivo remoto ausente.")?;
+                let entry = r.ok_or("Remote file missing.")?;
                 if entry.directory {
                     fs::create_dir(&path).map_err(|e| e.to_string())?;
                 } else {
@@ -436,7 +432,7 @@ async fn synchronize_files(
                             "-d",
                             "merge",
                             &remote_path,
-                            stage.path().to_str().ok_or("Caminho inválido.")?,
+                            stage.path().to_str().ok_or("Invalid path.")?,
                             "--json",
                         ],
                         3600,
@@ -452,13 +448,13 @@ async fn synchronize_files(
                         })
                     {
                         return Err(crate::i18n::message(
-                            "{0}: download incompleto.",
+                            "{0}: incomplete download.",
                             &[serde_json::json!(relative.to_string())],
                         ));
                     }
                     if cli.info(&remote_path).await?.revision != entry.revision {
                         return Err(crate::i18n::message(
-                            "{0} mudou no Drive durante o download.",
+                            "{0} changed in Drive during download.",
                             &[serde_json::json!(relative.to_string())],
                         ));
                     }
@@ -470,7 +466,7 @@ async fn synchronize_files(
                     };
                     if current.as_ref() != l {
                         return Err(crate::i18n::message(
-                            "{0} mudou localmente; cópia preservada.",
+                            "{0} changed locally; copy preserved.",
                             &[serde_json::json!(relative.to_string())],
                         ));
                     }
@@ -501,7 +497,7 @@ async fn synchronize_files(
     if !report.conflicts.is_empty() && !deletions.is_empty() {
         progress(
             "conflict",
-            "Exclusões adiadas até os conflitos serem resolvidos.",
+            "Deletions deferred until conflicts are resolved.",
         );
         return Ok(report);
     }
@@ -509,7 +505,7 @@ async fn synchronize_files(
     // before the old path can move to trash. Never use permanent CLI deletion.
     for (relative, delete_remote) in deletions {
         if cancel.load(Ordering::Relaxed) {
-            return Err("Sincronização interrompida entre operações.".into());
+            return Err("Sync interrupted between operations.".into());
         }
         let path = safe_join(&root, &relative)?;
         let remote_path = format!("{}/{}", pair.remote_path, relative);
@@ -517,14 +513,14 @@ async fn synchronize_files(
         if delete_remote {
             if path.exists() {
                 return Err(crate::i18n::message(
-                    "{0} reapareceu no PC; remoção cancelada.",
+                    "{0} reappeared on PC; removal cancelled.",
                     &[serde_json::json!(relative.to_string())],
                 ));
             }
-            let expected = remote.get(&relative).ok_or("Arquivo remoto ausente.")?;
+            let expected = remote.get(&relative).ok_or("Remote file missing.")?;
             if cli.info(&remote_path).await?.revision != expected.revision {
                 return Err(crate::i18n::message(
-                    "{0} mudou no Drive; remoção cancelada.",
+                    "{0} changed in Drive; removal cancelled.",
                     &[serde_json::json!(relative.to_string())],
                 ));
             }
@@ -534,7 +530,7 @@ async fn synchronize_files(
                     for entry in cli.list(&parent).await? {
                         if ignored(&entry.name) {
                             return Err(crate::i18n::message(
-                                "{0}: contém arquivos ignorados; remoção automática cancelada.",
+                                "{0}: contains ignored files; automatic removal cancelled.",
                                 &[serde_json::json!(relative.to_string())],
                             ));
                         }
@@ -558,7 +554,7 @@ async fn synchronize_files(
                     != original
                 {
                     return Err(crate::i18n::message(
-                        "{0}: a pasta mudou no Drive; remoção cancelada.",
+                        "{0}: folder changed in Drive; removal cancelled.",
                         &[serde_json::json!(relative.to_string())],
                     ));
                 }
@@ -566,7 +562,7 @@ async fn synchronize_files(
             cli.trash(&remote_path).await?;
         } else {
             // Re-list the parent: an API error is never interpreted as absence.
-            let parent = remote_path.rsplit_once('/').ok_or("Caminho inválido")?.0;
+            let parent = remote_path.rsplit_once('/').ok_or("Invalid path")?.0;
             if cli
                 .list(parent)
                 .await?
@@ -574,14 +570,14 @@ async fn synchronize_files(
                 .any(|entry| entry.path == remote_path)
             {
                 return Err(crate::i18n::message(
-                    "{0} reapareceu no Drive; remoção cancelada.",
+                    "{0} reappeared in Drive; removal cancelled.",
                     &[serde_json::json!(relative.to_string())],
                 ));
             }
-            let expected = local.get(&relative).ok_or("Arquivo local ausente.")?;
+            let expected = local.get(&relative).ok_or("Local file missing.")?;
             if fingerprint(&path)? != *expected {
                 return Err(crate::i18n::message(
-                    "{0} mudou no PC; remoção cancelada.",
+                    "{0} changed on PC; removal cancelled.",
                     &[serde_json::json!(relative.to_string())],
                 ));
             }
@@ -595,7 +591,7 @@ async fn synchronize_files(
                         || ignored(&entry.file_name().to_string_lossy())
                     {
                         return Err(crate::i18n::message(
-                            "{0}: contém arquivos ignorados; remoção automática cancelada.",
+                            "{0}: contains ignored files; automatic removal cancelled.",
                             &[serde_json::json!(relative.to_string())],
                         ));
                     }
@@ -610,7 +606,7 @@ async fn synchronize_files(
                     .collect();
                 if current != original {
                     return Err(crate::i18n::message(
-                        "{0}: a pasta mudou no PC; remoção cancelada.",
+                        "{0}: folder changed on PC; removal cancelled.",
                         &[serde_json::json!(relative.to_string())],
                     ));
                 }
@@ -618,7 +614,7 @@ async fn synchronize_files(
             let backup = safe_join(&root, &format!("{INTERNAL}/trash/{}", uuid::Uuid::new_v4()))?;
             fs::create_dir_all(&backup).map_err(|e| e.to_string())?;
             atomic_json(&backup.join("origin.json"), &relative)?;
-            fs::rename(&path, backup.join(path.file_name().ok_or("Nome inválido")?))
+            fs::rename(&path, backup.join(path.file_name().ok_or("Invalid name")?))
                 .map_err(|e| e.to_string())?;
         }
         snapshot.retain(|key, _| key != &relative && !key.starts_with(&prefix));
@@ -627,7 +623,7 @@ async fn synchronize_files(
         progress(
             "trash",
             &crate::i18n::message(
-                "{0}: movido para a lixeira de recuperação",
+                "{0}: moved to recovery trash",
                 &[serde_json::json!(relative.to_string())],
             ),
         );

@@ -4,6 +4,7 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { defineComponent, h, nextTick } from "vue";
 import { readFileSync } from "node:fs";
 import { parse } from "@vue/compiler-sfc";
+import legacyKeys from "../app/i18n/legacy-keys.json";
 import {
   catalogs,
   defaultLocale,
@@ -98,6 +99,24 @@ function driveState(): DriveState {
   };
 }
 describe("translations", () => {
+  it("reads English source messages and every legacy key without translating user data", () => {
+    for (const lang of ["en", "pt", "es"] as const) {
+      setLocale(lang);
+      for (const [oldKey, key] of Object.entries(legacyKeys)) {
+        expect(Object.hasOwn(catalogs.en, key), key).toBe(true);
+        expect(i18n.message(oldKey)).toBe(i18n.t(key));
+        expect(
+          i18n.message(encodeMessage(oldKey, ["Documentos/{0}.pdf"])),
+        ).toBe(i18n.message(encodeMessage(key, ["Documentos/{0}.pdf"])));
+      }
+    }
+    setLocale("en");
+    expect(i18n.message(encodeMessage("Sync {0}", ["Documentos"]))).toBe(
+      "Sync Documentos",
+    );
+    expect(i18n.message("constructor")).toBe("constructor");
+    expect(i18n.message("__proto__")).toBe("__proto__");
+  });
   it("uses English for a fresh profile, invalid preferences and unavailable storage", () => {
     expect(defaultLocale).toBe("en");
     localStorage.removeItem(localeStorageKey);
@@ -123,14 +142,14 @@ describe("translations", () => {
     expect(i18n.message("Caminho inválido.")).toBe("Invalid path.");
   });
   it("falls back to English for missing or empty translations, including nested native errors", () => {
-    const key = "Não foi possível salvar o idioma: {0}";
+    const key = "Couldn't save the language: {0}";
     for (const lang of ["pt", "es"] as const) {
       setLocale(lang);
       const original = catalogs[lang][key]!;
-      const nested = catalogs[lang]["Caminho inválido."]!;
+      const nested = catalogs[lang]["Invalid path."]!;
       try {
         delete catalogs[lang][key];
-        catalogs[lang]["Caminho inválido."] = "  ";
+        catalogs[lang]["Invalid path."] = "  ";
         expect(
           i18n.message(encodeMessage(key, [{ message: "Caminho inválido." }])),
         ).toBe("Couldn't save the language: Invalid path.");
@@ -143,7 +162,7 @@ describe("translations", () => {
         );
       } finally {
         catalogs[lang][key] = original;
-        catalogs[lang]["Caminho inválido."] = nested;
+        catalogs[lang]["Invalid path."] = nested;
       }
     }
   });
@@ -203,11 +222,14 @@ describe("translations", () => {
     for (const file of files) {
       const source = readFileSync(`${process.cwd()}/app/${file}`, "utf8");
       visit(parse(source).descriptor.template!.ast, file);
-      for (const match of source.matchAll(/\bt\(["']([^"']+)["']/g))
-        expect(
-          Object.hasOwn(catalogs.en, match[1]!),
-          `${file}: missing ${match[1]}`,
-        ).toBe(true);
+      for (const match of source.matchAll(
+        /\bt\(\s*(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)')/g,
+      )) {
+        const key = (match[1] ?? match[2]!).replace(/\\(['"\\])/g, "$1");
+        expect(Object.hasOwn(catalogs.en, key), `${file}: missing ${key}`).toBe(
+          true,
+        );
+      }
     }
   });
   it("formats plurals, numbers and document language, and restores the saved choice", () => {
@@ -557,9 +579,7 @@ describe("system tray preference", () => {
       setLocale(locale);
       await nextTick();
       expect(wrapper.get("#tray-status").text()).toBe(
-        catalogs[locale][
-          "A bandeja do sistema não está disponível nesta sessão."
-        ],
+        catalogs[locale]["The system tray is unavailable in this session."],
       );
       expect(wrapper.get("input").attributes("disabled")).toBeDefined();
     }

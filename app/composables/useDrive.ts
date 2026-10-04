@@ -86,7 +86,7 @@ export function useDrive() {
     if (!native.value)
       throw new Error(
         encodeMessage(
-          "Abra o aplicativo desktop para conectar sua conta e acessar os arquivos do computador.",
+          "Open the desktop app to connect your account and access files on your computer.",
         ),
       );
     return invoke<T>(name, args);
@@ -100,7 +100,7 @@ export function useDrive() {
       await command(name, args);
       if (success) toast(success);
     } catch (error) {
-      if (String(error) !== "Operação cancelada.") toast(String(error), true);
+      if (String(error) !== "Operation cancelled.") toast(String(error), true);
     } finally {
       await refresh();
     }
@@ -139,7 +139,7 @@ export function useDrive() {
     } catch (error) {
       setLocale(previous);
       toast(
-        encodeMessage("Não foi possível salvar o idioma: {0}", [
+        encodeMessage("Couldn't save the language: {0}", [
           { message: String(error) },
         ]),
         true,

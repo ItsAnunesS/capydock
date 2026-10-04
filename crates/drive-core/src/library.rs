@@ -10,19 +10,19 @@ use std::{fs, path::Path};
 pub async fn entry(cli: &Cli, path: &str) -> Result<RemoteEntry> {
     validate_source(path)?;
     if matches!(path, "/photos" | "/albums" | "/my-files") {
-        return Err("Selecione um arquivo.".into());
+        return Err("Select a file.".into());
     }
     cli.info(path).await
 }
 
 pub fn document_url(entry: &RemoteEntry) -> Result<String> {
     if !entry.native_document {
-        return Err("Este arquivo não é um documento Proton.".into());
+        return Err("This file is not a Proton document.".into());
     }
     let (volume, link) = entry
         .uid
         .split_once('~')
-        .ok_or("Identificador de documento inválido.")?;
+        .ok_or("Invalid document identifier.")?;
     let kind = if entry.media_type == "application/vnd.proton.sheet" {
         "sheet"
     } else {
@@ -45,10 +45,10 @@ pub async fn download(
     destination: &Path,
 ) -> Result<std::path::PathBuf> {
     if entry.directory || entry.native_document {
-        return Err("Abra documentos Proton no editor integrado.".into());
+        return Err("Open Proton documents in the integrated editor.".into());
     }
     validate_source(&entry.path)?;
-    let folder = destination.to_str().ok_or("Caminho inválido.")?;
+    let folder = destination.to_str().ok_or("Invalid path.")?;
     if entry.kind == "photo" {
         cli.run(
             &[
@@ -83,15 +83,15 @@ pub async fn download(
     let file = destination.join(&entry.name);
     let meta = fs::symlink_metadata(&file).map_err(|e| e.to_string())?;
     if !meta.is_file() || meta.file_type().is_symlink() || meta.len() != entry.size {
-        return Err("Download incompleto ou inesperado.".into());
+        return Err("Incomplete or unexpected download.".into());
     }
     if let Some(expected) = &entry.sha1 {
         if !sha1_file(&file)?.eq_ignore_ascii_case(expected) {
-            return Err("O conteúdo baixado não confere com o Drive.".into());
+            return Err("Downloaded content does not match Drive.".into());
         }
     }
     if cli.info(&entry.path).await?.revision != entry.revision {
-        return Err("O arquivo mudou durante o download. Tente novamente.".into());
+        return Err("The file changed during download. Try again.".into());
     }
     let _ = fingerprint(&file)?;
     Ok(file)

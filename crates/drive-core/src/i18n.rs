@@ -27,10 +27,10 @@ mod tests {
     #[test]
     fn messages_preserve_unicode_paths_and_nested_errors_as_distinct_values() {
         let filename = "Documentos/{0}/férias \"2026\".pdf";
-        let encoded = message("{0}: {1}", &[json!(filename), nested("Caminho inválido.")]);
+        let encoded = message("{0}: {1}", &[json!(filename), nested("Invalid path.")]);
         let value: Value =
             serde_json::from_str(encoded.strip_prefix(MESSAGE_PREFIX).unwrap()).unwrap();
         assert_eq!(value["values"][0], filename);
-        assert_eq!(value["values"][1]["message"], "Caminho inválido.");
+        assert_eq!(value["values"][1]["message"], "Invalid path.");
     }
 }

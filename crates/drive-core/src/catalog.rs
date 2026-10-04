@@ -273,7 +273,7 @@ impl Catalog {
         if bytes.len() as u64 > MAX_DISK_BYTES {
             return Ok(());
         }
-        let parent = self.file.parent().ok_or("Caminho inválido")?;
+        let parent = self.file.parent().ok_or("Invalid path")?;
         fs::create_dir_all(parent).map_err(|e| e.to_string())?;
         let mut file = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
         file.write_all(&bytes).map_err(|e| e.to_string())?;
@@ -306,7 +306,7 @@ pub async fn read_batch(
     parents: &[FolderRequest],
 ) -> Result<Vec<(String, Vec<RemoteEntry>)>> {
     if parents.is_empty() || parents.len() > 4 {
-        return Err("Lote de metadados inválido.".into());
+        return Err("Invalid metadata batch.".into());
     }
     let requests = serde_json::to_string(parents).map_err(|e| e.to_string())?;
     let output = helper
@@ -319,14 +319,14 @@ pub async fn read_batch(
     }
     let pages: Vec<Page> = serde_json::from_str(&output).map_err(|e| e.to_string())?;
     if pages.len() != parents.len() {
-        return Err("Lote de metadados inválido.".into());
+        return Err("Invalid metadata batch.".into());
     }
     pages
         .into_iter()
         .zip(parents)
         .map(|(page, parent)| {
             if page.path != parent.path {
-                return Err("Caminho remoto inválido.".into());
+                return Err("Invalid remote path.".into());
             }
             let entries = page
                 .entries

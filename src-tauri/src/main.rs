@@ -116,7 +116,7 @@ impl AppState {
                 {
                     self.catalog.deactivate();
                     self.runtime.lock().unwrap().connected = false;
-                    return Err("Esta conta é diferente da associada às pastas. Remova os pareamentos antes de trocar de conta.".into());
+                    return Err("This account differs from the one associated with your folders. Remove pairings before switching accounts.".into());
                 }
                 self.catalog.activate(&id);
                 config.account_id = Some(id);
@@ -179,7 +179,7 @@ async fn refresh_connection(app: tauri::AppHandle, state: State<'_, Arc<AppState
     let queue = state.queue.clone();
     queue
         .execute(
-            Spec::new("connection", "Verificar conexão", "Conta Proton").interactive(),
+            Spec::new("connection", "Check connection", "Proton account").interactive(),
             |_operation| async move {
                 let result = state.connect().await;
                 let _ = app.emit("drive-changed", ());
@@ -194,12 +194,7 @@ async fn login(app: tauri::AppHandle, state: State<'_, Arc<AppState>>) -> Result
     let queue = state.queue.clone();
     queue
         .execute(
-            Spec::new(
-                "login",
-                "Conectar conta Proton",
-                "Autenticação pelo navegador",
-            )
-            .exclusive(),
+            Spec::new("login", "Connect Proton account", "Browser authentication").exclusive(),
             |_operation| async move {
                 let result = async {
                     state.cli.run(&["auth", "login", "--json"], 600).await?;
@@ -208,7 +203,7 @@ async fn login(app: tauri::AppHandle, state: State<'_, Arc<AppState>>) -> Result
                 .await;
                 match &result {
                     Ok(_) => {
-                        state.activity(&app, "success", "Conta Proton conectada", None);
+                        state.activity(&app, "success", "Proton account connected", None);
                         catalog::preload(&app, state.inner());
                     }
                     Err(e) => state.activity(&app, "error", e.clone(), None),
@@ -224,12 +219,7 @@ async fn logout(app: tauri::AppHandle, state: State<'_, Arc<AppState>>) -> Resul
     let queue = state.queue.clone();
     queue
         .execute(
-            Spec::new(
-                "logout",
-                "Desconectar conta",
-                "Encerrar sessão e pausar sincronização",
-            )
-            .exclusive(),
+            Spec::new("logout", "Disconnect account", "Sign out and pause sync").exclusive(),
             |_operation| async move {
                 state.cli.run(&["auth", "logout", "--json"], 60).await?;
                 state.runtime.lock().unwrap().connected = false;
@@ -237,12 +227,7 @@ async fn logout(app: tauri::AppHandle, state: State<'_, Arc<AppState>>) -> Resul
                 state.queue.cancel_waiting_account_operations();
                 state.config.lock().unwrap().paused = true;
                 state.save()?;
-                state.activity(
-                    &app,
-                    "info",
-                    "Conta desconectada; sincronização pausada",
-                    None,
-                );
+                state.activity(&app, "info", "Account disconnected; sync paused", None);
                 Ok(())
             },
         )
@@ -256,7 +241,7 @@ async fn list_remote(state: State<'_, Arc<AppState>>, path: String) -> Result<Ve
         .execute(
             Spec::new(
                 "browse",
-                "Listar pastas",
+                "List folders",
                 drive_core::i18n::raw(path.clone()),
             )
             .interactive(),
@@ -277,7 +262,7 @@ async fn create_remote_folder(
             Spec::new(
                 "folder",
                 drive_core::i18n::message(
-                    "Criar pasta {0}",
+                    "Create folder {0}",
                     &[serde_json::json!(name.to_string())],
                 ),
                 drive_core::i18n::raw(parent.clone()),
@@ -314,7 +299,7 @@ async fn save_pair(
                 ..Spec::new(
                     "configure",
                     drive_core::i18n::message(
-                        "Configurar {0}",
+                        "Configure {0}",
                         &[serde_json::json!(pair.name.to_string())],
                     ),
                     drive_core::i18n::raw(pair.local_path.clone()),
@@ -327,7 +312,7 @@ async fn save_pair(
                         || !root.starts_with("/devices/")
                         || root.split('/').count() != 3
                     {
-                        return Err("Selecione um computador para a nova pasta.".into());
+                        return Err("Select a computer for the new folder.".into());
                     }
                     drive_core::cli::validate_name(&pair.name)?;
                     pair.remote_path = format!("{root}/{}", pair.name);
@@ -336,23 +321,23 @@ async fn save_pair(
                 let photos =
                     pair.remote_path == "/photos" || pair.remote_path.starts_with("/albums");
                 if photos && pair.propagate_deletions {
-                    return Err("Fotos e álbuns preservam exclusões.".into());
+                    return Err("Photos and albums preserve deletions.".into());
                 }
                 if pair.remote_path == "/albums" && pair.mode != SyncMode::Download {
-                    return Err("Todos os álbuns usam o modo Drive → PC.".into());
+                    return Err("All albums use Drive → PC mode.".into());
                 }
                 if pair.name.trim().is_empty() || pair.name.len() > 120 {
-                    return Err("Escolha um nome de até 120 caracteres.".into());
+                    return Err("Choose a name up to 120 characters.".into());
                 }
                 if !(1..=1440).contains(&pair.interval_minutes) {
-                    return Err("Escolha um intervalo entre 1 e 1440 minutos.".into());
+                    return Err("Choose an interval between 1 and 1440 minutes.".into());
                 }
                 let local = fs::canonicalize(&pair.local_path)
-                    .map_err(|_| "Selecione uma pasta local existente.")?;
+                    .map_err(|_| "Select an existing local folder.")?;
                 if !local.is_dir() || local.parent().is_none() {
-                    return Err("Selecione uma pasta, não a raiz do sistema.".into());
+                    return Err("Select a folder, not the system root.".into());
                 }
-                pair.local_path = local.to_str().ok_or("Caminho não UTF-8.")?.into();
+                pair.local_path = local.to_str().ok_or("Path is not UTF-8.")?.into();
                 {
                     let c = state.config.lock().unwrap();
                     for other in &c.pairs {
@@ -372,9 +357,9 @@ async fn save_pair(
                             || remote_overlap
                         {
                             return Err(
-                    "Esta pasta se sobrepõe a outro pareamento. Escolha pastas independentes."
-                        .into(),
-                );
+                                "This folder overlaps another pairing. Choose independent folders."
+                                    .into(),
+                            );
                         }
                     }
                     if !pair.id.is_empty() {
@@ -382,12 +367,11 @@ async fn save_pair(
                             .pairs
                             .iter()
                             .find(|p| p.id == pair.id)
-                            .ok_or("Pareamento não encontrado.")?;
+                            .ok_or("Pairing not found.")?;
                         if old.local_path != pair.local_path || old.remote_path != pair.remote_path
                         {
                             return Err(
-                                "Para mudar os caminhos, remova este pareamento e crie outro."
-                                    .into(),
+                                "To change paths, remove this pairing and create another.".into()
                             );
                         }
                         pair.device_uid = old.device_uid.clone();
@@ -402,7 +386,7 @@ async fn save_pair(
                 {
                     if !pair.id.is_empty() && pair.device_uid.as_deref() != Some(&device.uid) {
                         return Err(
-                            "A identidade do computador mudou. Reconfigure o pareamento.".into(),
+                            "The computer's identity changed. Reconfigure the pairing.".into()
                         );
                     }
                     pair.device_uid = Some(device.uid);
@@ -413,7 +397,9 @@ async fn save_pair(
                     let existing = state.cli.list(root).await?;
                     match existing.iter().find(|e| e.name == pair.name) {
                         Some(entry) if !entry.directory => {
-                            return Err("Já existe um arquivo com esse nome no computador.".into())
+                            return Err(
+                                "A file with this name already exists on the computer.".into()
+                            )
                         }
                         Some(_) => (),
                         None => {
@@ -447,12 +433,11 @@ async fn save_pair(
                             .pairs
                             .iter_mut()
                             .find(|p| p.id == pair.id)
-                            .ok_or("Pareamento não encontrado.")?;
+                            .ok_or("Pairing not found.")?;
                         if old.local_path != pair.local_path || old.remote_path != pair.remote_path
                         {
                             return Err(
-                                "Para mudar os caminhos, remova este pareamento e crie outro."
-                                    .into(),
+                                "To change paths, remove this pairing and create another.".into()
                             );
                         }
                         pair.last_run = old.last_run;
@@ -464,7 +449,7 @@ async fn save_pair(
                     &app,
                     "info",
                     drive_core::i18n::message(
-                        "Pasta {0} configurada",
+                        "Folder {0} configured",
                         &[serde_json::json!(pair.name.to_string())],
                     ),
                     Some(pair.id),
@@ -486,11 +471,7 @@ async fn remove_pair(
         .execute(
             Spec {
                 pair_id: Some(id.clone()),
-                ..Spec::new(
-                    "configure",
-                    "Remover pareamento",
-                    "Preservar os arquivos nos dois lados",
-                )
+                ..Spec::new("configure", "Remove pairing", "Keep files on both sides")
             },
             |_operation| async move {
                 {
@@ -515,7 +496,7 @@ fn set_preferences(
     close_to_tray: Option<bool>,
 ) -> Result<()> {
     if close_to_tray == Some(true) && app.tray_by_id(MAIN_TRAY_ID).is_none() {
-        return Err("A bandeja do sistema não está disponível nesta sessão.".into());
+        return Err("The system tray is unavailable in this session.".into());
     }
     if app.autolaunch().is_enabled().map_err(|e| e.to_string())? != autostart {
         if autostart {
@@ -582,14 +563,11 @@ async fn run_pairs(
             .collect();
         let title = if selected.len() == 1 {
             drive_core::i18n::message(
-                "Sincronizar {0}",
+                "Sync {0}",
                 &[serde_json::json!(selected[0].name.to_string())],
             )
         } else {
-            drive_core::i18n::message(
-                "Sincronizar {0} pastas",
-                &[serde_json::json!(selected.len())],
-            )
+            drive_core::i18n::message("Sync {0} folders", &[serde_json::json!(selected.len())])
         };
         Spec {
             automatic,
@@ -599,9 +577,9 @@ async fn run_pairs(
                 "sync",
                 title,
                 if automatic {
-                    "Sincronização automática"
+                    "Automatic sync"
                 } else {
-                    "Solicitada por você"
+                    "Requested by you"
                 },
             )
         }
@@ -644,18 +622,12 @@ async fn execute_pairs(
         }
         operation.progress(
             Some(pair.id.clone()),
-            drive_core::i18n::message(
-                "Comparando {0}",
-                &[serde_json::json!(pair.name.to_string())],
-            ),
+            drive_core::i18n::message("Comparing {0}", &[serde_json::json!(pair.name.to_string())]),
         );
         state.activity(
             app,
             "info",
-            drive_core::i18n::message(
-                "Sincronizando {0}",
-                &[serde_json::json!(pair.name.to_string())],
-            ),
+            drive_core::i18n::message("Syncing {0}", &[serde_json::json!(pair.name.to_string())]),
             Some(pair.id.clone()),
         );
         let result = synchronize(
@@ -669,11 +641,11 @@ async fn execute_pairs(
             |kind, message| {
                 let detail = match kind {
                     "upload" => drive_core::i18n::message(
-                        "Enviando · {0}",
+                        "Uploading · {0}",
                         &[serde_json::json!(message.to_string())],
                     ),
                     "download" => drive_core::i18n::message(
-                        "Recebendo · {0}",
+                        "Downloading · {0}",
                         &[serde_json::json!(message.to_string())],
                     ),
                     _ => message.to_owned(),
@@ -701,7 +673,7 @@ async fn execute_pairs(
                 } else {
                     "conflict"
                 },
-                drive_core::i18n::message("{0}: {1} enviados, {2} recebidos, {3} sem alterações, {4} na lixeira, {5} documentos online, {6} conflitos", &[serde_json::json!(pair.name.to_string()), serde_json::json!(report.uploaded), serde_json::json!(report.downloaded), serde_json::json!(report.unchanged), serde_json::json!(report.deleted), serde_json::json!(report.online_only), serde_json::json!(report.conflicts.len())]),
+                drive_core::i18n::message("{0}: {1} uploaded, {2} downloaded, {3} unchanged, {4} trashed, {5} online documents, {6} conflicts", &[serde_json::json!(pair.name.to_string()), serde_json::json!(report.uploaded), serde_json::json!(report.downloaded), serde_json::json!(report.unchanged), serde_json::json!(report.deleted), serde_json::json!(report.online_only), serde_json::json!(report.conflicts.len())]),
                 Some(pair.id),
             ),
             Err(e) => {
@@ -758,8 +730,8 @@ async fn perform_update(
                 automatic,
                 ..Spec::new(
                     "update",
-                    "Verificar atualização do CLI",
-                    "Download e verificação SHA-512, se houver nova versão",
+                    "Check for CLI updates",
+                    "Download and SHA-512 verification, if a new version is available",
                 )
                 .exclusive()
             },
@@ -782,12 +754,12 @@ async fn perform_update(
                     state.save()?;
                     let message = if installed {
                         drive_core::i18n::message(
-                            "CLI atualizado para {0} · SHA-512 verificado",
+                            "CLI updated to {0} · SHA-512 verified",
                             &[serde_json::json!(latest.version.to_string())],
                         )
                     } else {
                         drive_core::i18n::message(
-                            "CLI {0} está atualizado",
+                            "CLI {0} is up to date",
                             &[serde_json::json!(state
                                 .runtime
                                 .lock()
@@ -807,7 +779,7 @@ async fn perform_update(
                             app,
                             "error",
                             drive_core::i18n::message(
-                                "Atualização: {0}",
+                                "Update: {0}",
                                 &[drive_core::i18n::nested(e.to_string())],
                             ),
                             None,
@@ -831,7 +803,7 @@ fn computer_name() -> String {
         .ok()
         .map(|s| s.trim().to_owned())
         .filter(|s| !s.is_empty() && drive_core::cli::validate_name(s).is_ok())
-        .unwrap_or_else(|| "Meu PC Linux".into())
+        .unwrap_or_else(|| "My Linux PC".into())
 }
 
 #[tauri::command]
@@ -846,14 +818,14 @@ async fn register_computer(
         .execute(
             Spec::new(
                 "computer",
-                "Registrar computador",
+                "Register computer",
                 drive_core::i18n::raw(name.clone()),
             ),
             |_operation| async move {
                 state.connect().await?;
                 let (account, binding) = {
                     let c = state.config.lock().unwrap();
-                    let account = c.account_id.clone().ok_or("Conecte sua conta Proton.")?;
+                    let account = c.account_id.clone().ok_or("Connect your Proton account.")?;
                     let binding = c.computer_registrations.get(&account).cloned();
                     (account, binding)
                 };
@@ -897,12 +869,12 @@ async fn register_computer(
         .await?
         .into_iter()
         .find(|d| d.uid == created.uid)
-        .ok_or("O CLI ainda não confirmou o registro. Atualize a biblioteca e tente novamente.")?;
+        .ok_or("The CLI hasn't confirmed registration yet. Refresh the library and try again.")?;
                 state.activity(
                     &app,
                     "success",
                     drive_core::i18n::message(
-                        "{0} registrado em Computers. Escolha as pastas para sincronizar.",
+                        "{0} registered in Computers. Choose folders to sync.",
                         &[serde_json::json!(device.name.to_string())],
                     ),
                     None,
@@ -948,18 +920,18 @@ async fn preview_file(state: State<'_, Arc<AppState>>, path: String) -> Result<P
         .execute(
             Spec::new(
                 "preview",
-                "Pré-visualizar arquivo",
+                "Preview file",
                 drive_core::i18n::raw(path.clone()),
             )
             .interactive(),
             |_operation| async move {
                 use base64::Engine;
                 if !state.runtime.lock().unwrap().connected {
-                    return Err("Conecte sua conta Proton antes de abrir a biblioteca.".into());
+                    return Err("Connect your Proton account before opening the library.".into());
                 }
                 let entry = drive_core::library::entry(&state.cli, &path).await?;
                 if entry.native_document {
-                    return Err("Abra este documento no editor Proton.".into());
+                    return Err("Open this document in the Proton editor.".into());
                 }
                 let mime = entry.media_type.as_str();
                 let kind = if matches!(
@@ -991,7 +963,7 @@ async fn preview_file(state: State<'_, Arc<AppState>>, path: String) -> Result<P
                 };
                 if entry.size > limit {
                     return Err(
-            "Este arquivo é grande para pré-visualizar. Use Baixar para abrir no computador."
+            "This file is too large to preview. Use Download to open it on your computer."
                 .into(),
         );
                 }
@@ -1026,7 +998,7 @@ async fn download_file(
         .execute(
             Spec::new(
                 "download",
-                "Baixar arquivo",
+                "Download file",
                 drive_core::i18n::raw(format!("{path} → {destination}")),
             ),
             |_operation| async move {
@@ -1034,9 +1006,9 @@ async fn download_file(
                 state.connect().await?;
                 let entry = drive_core::library::entry(&state.cli, &path).await?;
                 let root =
-                    fs::canonicalize(&destination).map_err(|_| "Selecione uma pasta existente.")?;
+                    fs::canonicalize(&destination).map_err(|_| "Select an existing folder.")?;
                 if !root.is_dir() {
-                    return Err("Destino inválido.".into());
+                    return Err("Invalid destination.".into());
                 }
                 let target = drive_core::sync::safe_join(&root, &entry.name)?;
                 let stage = tempfile::tempdir_in(&root).map_err(|e| e.to_string())?;
@@ -1052,7 +1024,7 @@ async fn download_file(
                 .map_err(|e| e.to_string())?;
                 final_file.flush().map_err(|e| e.to_string())?;
                 final_file.persist_noclobber(&target).map_err(|_| {
-        "Já existe um arquivo com esse nome ou não foi possível salvar. Escolha outra pasta."
+        "A file with this name already exists or couldn't be saved. Choose another folder."
     })?;
                 Ok(target.to_string_lossy().into())
             },
@@ -1071,13 +1043,13 @@ async fn open_document(
         .execute(
             Spec::new(
                 "document",
-                "Abrir documento Proton",
+                "Open Proton document",
                 drive_core::i18n::raw(path.clone()),
             )
             .interactive(),
             |_operation| async move {
                 if !state.runtime.lock().unwrap().connected {
-                    return Err("Conecte sua conta Proton antes de abrir a biblioteca.".into());
+                    return Err("Connect your Proton account before opening the library.".into());
                 }
                 let entry = drive_core::library::entry(&state.cli, &path).await?;
                 let url = drive_core::library::document_url(&entry)?;
@@ -1096,14 +1068,14 @@ async fn setup_library(
     include_photos: bool,
 ) -> Result<()> {
     let queue = state.queue.clone();
-    queue.execute(Spec::new("configure", "Configurar biblioteca", drive_core::i18n::raw(local_path.clone())), |_operation| async move {
+    queue.execute(Spec::new("configure", "Configure library", drive_core::i18n::raw(local_path.clone())), |_operation| async move {
     state.connect().await?;
     if !state.config.lock().unwrap().pairs.is_empty() {
-        return Err("A biblioteca completa se sobrepõe aos pareamentos existentes. Remova os pareamentos na tela Pastas (seus arquivos serão preservados) e tente novamente.".into());
+        return Err("The full library overlaps existing pairings. Remove pairings on the Folders screen (your files will be preserved) and try again.".into());
     }
-    let root = fs::canonicalize(local_path).map_err(|_| "Selecione uma pasta local existente.")?;
+    let root = fs::canonicalize(local_path).map_err(|_| "Select an existing local folder.")?;
     if !root.is_dir() || root.parent().is_none() {
-        return Err("Pasta local inválida.".into());
+        return Err("Invalid local folder.".into());
     }
     state.cli.folders("/my-files").await?;
     if include_photos {
@@ -1137,13 +1109,13 @@ async fn setup_library(
     }
     state.config.lock().unwrap().pairs = pairs;
     state.save()?;
-    state.activity(&app, "success", "Biblioteca configurada. Alterações locais sincronizam automaticamente; mudanças no Drive são verificadas a cada 5 minutos.", None);
+    state.activity(&app, "success", "Library configured. Local changes sync automatically; changes in Drive are checked every 5 minutes.", None);
     Ok(())
     }).await
 }
 
 fn open_proton_window(app: &tauri::AppHandle, label: &str, url: &str, title: &str) -> Result<()> {
-    let url: tauri::Url = url.parse().map_err(|_| "URL inválida.")?;
+    let url: tauri::Url = url.parse().map_err(|_| "Invalid URL.")?;
     if let Some(window) = app.get_webview_window(label) {
         window.navigate(url).map_err(|e| e.to_string())?;
         window.show().map_err(|e| e.to_string())?;
@@ -1186,7 +1158,7 @@ fn open_recovery(state: State<'_, Arc<AppState>>, id: String) -> Result<()> {
         .iter()
         .find(|pair| pair.id == id)
         .map(|pair| PathBuf::from(&pair.local_path))
-        .ok_or("Pareamento não encontrado.")?;
+        .ok_or("Pairing not found.")?;
     let path = drive_core::sync::safe_join(&root, drive_core::sync::INTERNAL)?;
     fs::create_dir_all(&path).map_err(|e| e.to_string())?;
     std::process::Command::new("xdg-open")
@@ -1206,7 +1178,7 @@ fn open_local(state: State<'_, Arc<AppState>>, id: String) -> Result<()> {
         .iter()
         .find(|p| p.id == id)
         .map(|p| p.local_path.clone())
-        .ok_or("Pasta não encontrada.")?;
+        .ok_or("Folder not found.")?;
     std::process::Command::new("xdg-open")
         .arg(path)
         .spawn()

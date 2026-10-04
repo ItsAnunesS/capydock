@@ -21,7 +21,7 @@ impl Cli {
         let node = value.get("value").unwrap_or(&value);
         let uid = node["uid"]
             .as_str()
-            .ok_or("Não foi possível identificar a conta.")?
+            .ok_or("Couldn't identify the account.")?
             .to_owned();
         let email = node["ownedBy"]["email"].as_str().map(str::to_owned);
         Ok((uid, email))
@@ -37,17 +37,17 @@ impl Cli {
             .env("PROTON_DRIVE_LOG_LEVEL", "WARNING");
         let output = tokio::time::timeout(Duration::from_secs(seconds), command.output())
             .await
-            .map_err(|_| "O CLI excedeu o tempo limite. Tente novamente.".to_string())?
+            .map_err(|_| "The CLI timed out. Try again.".to_string())?
             .map_err(|e| {
                 crate::i18n::message(
-                    "Não foi possível executar o CLI: {0}",
+                    "Couldn't run the CLI: {0}",
                     &[crate::i18n::nested(e.to_string())],
                 )
             })?;
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
         if !output.status.success() {
             if args.first() == Some(&"auth") {
-                return Err("O login ou logout não foi concluído. Verifique o navegador e se o cofre de credenciais do Linux está desbloqueado.".into());
+                return Err("Sign-in or sign-out did not finish. Check your browser and make sure the Linux keyring is unlocked.".into());
             }
             let stderr = String::from_utf8_lossy(&output.stderr);
             let text: &str = if stderr.trim().is_empty() {
@@ -56,7 +56,7 @@ impl Cli {
                 &stderr
             };
             return Err(crate::i18n::message(
-                "Falha no CLI: {0}",
+                "CLI failed: {0}",
                 &[crate::i18n::nested(
                     text.chars().take(1500).collect::<String>().trim(),
                 )],
@@ -74,7 +74,7 @@ impl Cli {
             .await?;
         let nodes: Vec<Value> = serde_json::from_str(&output).map_err(|e| {
             crate::i18n::message(
-                "Resposta JSON inválida do CLI: {0}",
+                "Invalid JSON response from CLI: {0}",
                 &[crate::i18n::nested(e.to_string())],
             )
         })?;
@@ -88,7 +88,7 @@ impl Cli {
         if let Some(path) = album {
             validate_source(path)?;
             if !path.starts_with("/albums/") {
-                return Err("Álbum inválido.".into());
+                return Err("Invalid album.".into());
             }
             self.photo_list(
                 &["album", "photos", "--load-details", path, "--json"],
@@ -107,7 +107,7 @@ impl Cli {
         let output = self.run(args, 600).await?;
         let nodes: Vec<Value> = serde_json::from_str(&output).map_err(|e| {
             crate::i18n::message(
-                "Metadados de fotos inválidos: {0}",
+                "Invalid photo metadata: {0}",
                 &[crate::i18n::nested(e.to_string())],
             )
         })?;
@@ -124,7 +124,7 @@ impl Cli {
     pub async fn trash(&self, path: &str) -> Result<()> {
         validate_remote(path)?;
         if path == "/my-files" || (path.starts_with("/devices/") && path.split('/').count() == 3) {
-            return Err("Não é possível remover a raiz.".into());
+            return Err("The root cannot be removed.".into());
         }
         let output = self
             .run(&["filesystem", "trash", path, "--json"], 120)
@@ -135,7 +135,7 @@ impl Cli {
                 .iter()
                 .any(|item| item["ok"].as_bool() != Some(true))
         {
-            return Err("O Drive não confirmou a remoção para a lixeira.".into());
+            return Err("Drive did not confirm the move to trash.".into());
         }
         Ok(())
     }
@@ -152,7 +152,7 @@ impl Cli {
             .await?;
         let nodes: Vec<Value> = serde_json::from_str(&output).map_err(|e| {
             crate::i18n::message(
-                "Resposta JSON inválida do CLI: {0}",
+                "Invalid JSON response from CLI: {0}",
                 &[crate::i18n::nested(e.to_string())],
             )
         })?;
@@ -165,7 +165,7 @@ impl Cli {
             .await?;
         let node = serde_json::from_str(&output).map_err(|e| {
             crate::i18n::message(
-                "Metadados inválidos: {0}",
+                "Invalid metadata: {0}",
                 &[crate::i18n::nested(e.to_string())],
             )
         })?;
@@ -185,14 +185,14 @@ pub fn validate_name(name: &str) -> Result<()> {
         || name.contains(['/', '\\', '\0'])
         || name.chars().any(char::is_control)
     {
-        return Err("Nome de arquivo incompatível com a sincronização local.".into());
+        return Err("File name is incompatible with local sync.".into());
     }
     Ok(())
 }
 
 pub fn validate_remote(path: &str) -> Result<()> {
     if path != "/my-files" && !path.starts_with("/my-files/") && !path.starts_with("/devices/") {
-        return Err("Selecione uma pasta em Meus arquivos ou em um computador registrado.".into());
+        return Err("Select a folder in My files or on a registered computer.".into());
     }
     for part in path.trim_start_matches('/').split('/') {
         validate_name(part)?;
@@ -220,7 +220,7 @@ pub fn parse_entry(node: &Value, parent: &str) -> Result<RemoteEntry> {
             .and_then(Value::as_array)
             .is_some_and(|e| !e.is_empty())
     {
-        return Err("O Proton Drive retornou metadados que não puderam ser verificados.".into());
+        return Err("Proton Drive returned metadata that could not be verified.".into());
     }
     let node =
         if node.get("ok").and_then(Value::as_bool) == Some(true) && node.get("value").is_some() {
@@ -237,22 +237,22 @@ pub fn parse_entry(node: &Value, parent: &str) -> Result<RemoteEntry> {
                 None
             }
         })
-        .ok_or("Não foi possível decifrar o nome de um arquivo.")?;
+        .ok_or("Couldn't decrypt a file name.")?;
     validate_name(name)?;
     let directory = match node["type"].as_str() {
         Some("folder" | "album") => true,
         Some("file" | "photo") => false,
-        _ => return Err("Tipo de arquivo não suportado.".into()),
+        _ => return Err("Unsupported file type.".into()),
     };
     let media_type = node["mediaType"].as_str().unwrap_or("");
     let native_document = media_type.contains("proton");
-    let uid = node["uid"].as_str().ok_or("Arquivo sem identificador.")?;
+    let uid = node["uid"].as_str().ok_or("File has no identifier.")?;
     let rev = if directory || native_document {
         uid
     } else {
         node["activeRevision"]["uid"]
             .as_str()
-            .ok_or("Arquivo sem revisão verificável.")?
+            .ok_or("File has no verifiable revision.")?
     };
     Ok(RemoteEntry {
         uid: uid.into(),

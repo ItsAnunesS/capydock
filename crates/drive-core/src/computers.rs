@@ -22,7 +22,7 @@ pub fn registration_target(
     if let Some(uid) = binding.and_then(|r| r.device_uid.as_deref()) {
         return devices.iter().find(|d| d.uid == uid).cloned()
             .map(RegistrationTarget::Existing)
-            .ok_or_else(|| "O registro deste PC não está mais no Drive. Confira a lixeira ou restaure o computador na versão web; não criaremos outro automaticamente.".into());
+            .ok_or_else(|| "This PC’s registration is no longer in Drive. Check the trash or restore the computer in the web app; another will not be created automatically.".into());
     }
     if binding.is_none() {
         if let Some(uid) = existing_uid {
@@ -31,13 +31,13 @@ pub fn registration_target(
                 .find(|d| d.uid == uid && d.media_type == "Linux")
                 .cloned()
                 .map(RegistrationTarget::Existing)
-                .ok_or_else(|| "Selecione um computador Linux existente nesta conta.".into());
+                .ok_or_else(|| "Select an existing Linux computer in this account.".into());
         }
     }
     let name = binding.map_or(requested_name, |r| r.name.as_str()).trim();
     validate_name(name)?;
     if name.len() > 120 {
-        return Err("Nome de computador muito longo.".into());
+        return Err("Computer name is too long.".into());
     }
     let matches: Vec<_> = devices.iter().filter(|d| d.name == name).collect();
     match matches.as_slice() {
@@ -45,31 +45,54 @@ pub fn registration_target(
         [device] if device.media_type == "Linux" => {
             Ok(RegistrationTarget::Existing((*device).clone()))
         }
-        [_] => Err("Esse nome já pertence a outro computador. Escolha um nome diferente.".into()),
-        _ => Err("Há computadores com o mesmo nome. Renomeie-os no Proton Drive.".into()),
+        [_] => {
+            Err("That name already belongs to another computer. Choose a different name.".into())
+        }
+        _ => Err("Computers have the same name. Rename them in Proton Drive.".into()),
     }
 }
 
 pub fn parse_devices(nodes: &[Value]) -> Result<Vec<RemoteEntry>> {
     let mut names = BTreeSet::new();
-    nodes.iter().map(|node| {
-        let name = node["name"].as_str().or_else(|| {
-            (node["name"]["ok"].as_bool() == Some(true)).then(|| node["name"]["value"].as_str()).flatten()
-        }).ok_or("Não foi possível decifrar o nome de um computador.")?;
-        validate_name(name)?;
-        if !names.insert(name) {
-            return Err("Há computadores com nomes repetidos. Renomeie-os no Proton Drive antes de sincronizar.".into());
-        }
-        let uid = node["uid"].as_str().filter(|s| !s.is_empty()).ok_or("Computador sem identificador.")?;
-        let root = node["rootFolderUid"].as_str().filter(|s| !s.is_empty()).ok_or("Computador sem pasta raiz.")?;
-        Ok(RemoteEntry {
-            name: name.into(), path: format!("/devices/{name}"), uid: uid.into(),
-            revision: root.into(), directory: true, kind: "device".into(),
-            media_type: node["type"].as_str().unwrap_or("Computer").into(),
-            modified: node["lastSyncTime"].as_str().map(str::to_owned),
-            ..Default::default()
+    nodes
+        .iter()
+        .map(|node| {
+            let name = node["name"]
+                .as_str()
+                .or_else(|| {
+                    (node["name"]["ok"].as_bool() == Some(true))
+                        .then(|| node["name"]["value"].as_str())
+                        .flatten()
+                })
+                .ok_or("Couldn't decrypt a computer name.")?;
+            validate_name(name)?;
+            if !names.insert(name) {
+                return Err(
+                    "Computers have duplicate names. Rename them in Proton Drive before syncing."
+                        .into(),
+                );
+            }
+            let uid = node["uid"]
+                .as_str()
+                .filter(|s| !s.is_empty())
+                .ok_or("Computer has no identifier.")?;
+            let root = node["rootFolderUid"]
+                .as_str()
+                .filter(|s| !s.is_empty())
+                .ok_or("Computer has no root folder.")?;
+            Ok(RemoteEntry {
+                name: name.into(),
+                path: format!("/devices/{name}"),
+                uid: uid.into(),
+                revision: root.into(),
+                directory: true,
+                kind: "device".into(),
+                media_type: node["type"].as_str().unwrap_or("Computer").into(),
+                modified: node["lastSyncTime"].as_str().map(str::to_owned),
+                ..Default::default()
+            })
         })
-    }).collect()
+        .collect()
 }
 
 impl Cli {
@@ -79,7 +102,7 @@ impl Cli {
             .await?;
         let nodes: Vec<Value> = serde_json::from_str(&output).map_err(|e| {
             crate::i18n::message(
-                "Computadores inválidos: {0}",
+                "Invalid computers: {0}",
                 &[crate::i18n::nested(e.to_string())],
             )
         })?;
@@ -100,15 +123,14 @@ impl Cli {
             .find(|d| d.name == name)
             .map(Some)
             .ok_or_else(|| {
-                "Computador não encontrado. Confira se ele foi renomeado ou removido no Drive."
-                    .into()
+                "Computer not found. Check whether it was renamed or removed in Drive.".into()
             })
     }
 
     pub async fn verify_computer_pair(&self, pair: &SyncPair) -> Result<()> {
         if let Some(device) = self.computer_for_path(&pair.remote_path).await? {
             if pair.device_uid.as_deref() != Some(device.uid.as_str()) {
-                return Err("O computador de destino mudou. Reconfigure este pareamento para verificar sua identidade.".into());
+                return Err("The destination computer changed. Reconfigure this pairing to verify its identity.".into());
             }
         }
         Ok(())
@@ -117,18 +139,18 @@ impl Cli {
     pub async fn register_computer(&self, name: &str) -> Result<RemoteEntry> {
         validate_name(name)?;
         if name.len() > 120 {
-            return Err("Nome de computador muito longo.".into());
+            return Err("Computer name is too long.".into());
         }
         let output = self.run(&["device", "ensure", name, "--json"], 180).await?;
         let node: Value = serde_json::from_str(&output).map_err(|e| {
             crate::i18n::message(
-                "Registro inválido: {0}",
+                "Invalid registration: {0}",
                 &[crate::i18n::nested(e.to_string())],
             )
         })?;
         parse_devices(&[node])?
             .pop()
-            .ok_or_else(|| "O registro não retornou um computador.".into())
+            .ok_or_else(|| "Registration did not return a computer.".into())
     }
 }
 
@@ -177,7 +199,7 @@ mod registration_tests {
         };
         assert_eq!(found.uid, "pc-1");
         assert_eq!(found.path, "/devices/Nome novo");
-        assert!(registration_target(Some(&binding), &[], "Criar outro", None).is_err());
+        assert!(registration_target(Some(&binding), &[], "Create another", None).is_err());
     }
     #[test]
     fn persisted_pending_intent_recovers_uncertain_creation_without_a_duplicate() {

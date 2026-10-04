@@ -56,7 +56,7 @@ describe("responsive catalog", () => {
   });
   it("keeps usable cached results on a refresh failure and permits explicit retry", async () => {
     const command = vi.fn(async () =>
-      libraryView([file], { error: "Sem conexão" }),
+      libraryView([file], { error: "No connection" }),
     );
     const wrapper = mount(CloudLibrary, {
       props: { connected: true, native: true, command: command as never },
@@ -64,7 +64,7 @@ describe("responsive catalog", () => {
     });
     await flushPromises();
     expect(wrapper.get(".file-name-button").text()).toContain(file.name);
-    expect(wrapper.get('[role="alert"]').text()).toContain("Sem conexão");
+    expect(wrapper.get('[role="alert"]').text()).toContain("No connection");
     await wrapper.get('[aria-label="Refresh library"]').trigger("click");
     await flushPromises();
     expect(command).toHaveBeenLastCalledWith("list_library", {
@@ -124,7 +124,7 @@ describe("batched metadata SDK bridge", () => {
     ]) {
       await expect(
         readFolderBatch(sdk, paths, JSON.stringify(input)),
-      ).rejects.toThrow("Lote");
+      ).rejects.toThrow("Invalid metadata batch.");
     }
     expect(sdk.iterateFolderChildren).not.toHaveBeenCalled();
   });

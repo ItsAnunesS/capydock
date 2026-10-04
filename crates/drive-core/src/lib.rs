@@ -18,7 +18,7 @@ pub fn now() -> u64 {
 
 pub fn atomic_json(path: &std::path::Path, value: &impl serde::Serialize) -> Result<()> {
     use std::io::Write;
-    let parent = path.parent().ok_or("Caminho inválido")?;
+    let parent = path.parent().ok_or("Invalid path")?;
     std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     let mut file = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
     file.write_all(&serde_json::to_vec_pretty(value).map_err(|e| e.to_string())?)

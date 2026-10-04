@@ -24,7 +24,7 @@ pub fn request(
         validate_source(&path)?;
     }
     if !state.runtime.lock().unwrap().connected {
-        return Err("Conecte sua conta Proton antes de abrir a biblioteca.".into());
+        return Err("Connect your Proton account before opening the library.".into());
     }
     if let Some(ticket) = state.catalog.begin(&path, force) {
         let state = state.clone();
@@ -33,10 +33,9 @@ pub fn request(
         tauri::async_runtime::spawn(async move {
             let result = loop {
                 let spec = if source == "/documents" {
-                    Spec::new("index", "Indexar documentos", raw(&source)).background()
+                    Spec::new("index", "Index documents", raw(&source)).background()
                 } else {
-                    let mut spec =
-                        Spec::new("browse", "Carregar biblioteca", raw(&source)).interactive();
+                    let mut spec = Spec::new("browse", "Load library", raw(&source)).interactive();
                     spec.automatic = automatic;
                     spec
                 };
@@ -129,17 +128,14 @@ async fn index(
             for entry in entries {
                 total += 1;
                 if total > 100_000 || entry.path.split('/').count() > 102 {
-                    return Err("A pasta excede o limite de 100 níveis ou 100.000 itens.".into());
+                    return Err("Folder exceeds the limit of 100 levels or 100,000 items.".into());
                 }
                 if !paths.insert(entry.path.clone()) {
-                    return Err(
-                        "Nomes duplicados no Drive; renomeie os arquivos antes de sincronizar."
-                            .into(),
-                    );
+                    return Err("Duplicate names in Drive; rename the files before syncing.".into());
                 }
                 if entry.directory {
                     if !seen.insert(entry.uid.clone()) {
-                        return Err("Ciclo de pastas detectado no índice.".into());
+                        return Err("Folder cycle detected in the index.".into());
                     }
                     pending.push_back(FolderRequest {
                         path: entry.path.clone(),
@@ -163,7 +159,7 @@ async fn index(
         operation.progress(
             None,
             message(
-                "{0} pastas verificadas · {1} documentos · {2} pastas pendentes",
+                "{0} folders checked · {1} documents · {2} folders pending",
                 &[
                     serde_json::json!(done),
                     serde_json::json!(documents.len()),

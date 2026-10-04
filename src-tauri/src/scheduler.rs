@@ -18,8 +18,8 @@ pub(super) async fn run(app: tauri::AppHandle, state: Arc<AppState>) {
         .execute(
             Spec::new(
                 "connection",
-                "Iniciar Proton Drive",
-                "Verificar CLI e conexão",
+                "Start Proton Drive",
+                "Check CLI and connection",
             ),
             |_| async {
                 if let Ok(version) = state.cli.run(&["version"], 30).await {

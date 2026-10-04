@@ -25,15 +25,15 @@ function change(event: Event) {
       <p id="tray-help">
         {{
           t(
-            "Ao clicar no X, ocultar o aplicativo e continuar sincronizando em segundo plano.",
+            "When you click X, hide the app and keep syncing in the background.",
           )
         }}
       </p>
       <p id="tray-status">
         {{
           native && !available
-            ? t("A bandeja do sistema não está disponível nesta sessão.")
-            : t("Use o ícone da bandeja para abrir o aplicativo ou sair.")
+            ? t("The system tray is unavailable in this session.")
+            : t("Use the tray icon to open the app or quit.")
         }}
       </p>
     </div>

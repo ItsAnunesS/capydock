@@ -72,12 +72,12 @@ function submit() {
     <div class="computer-connection-heading">
       <span class="folder-icon"><AppIcon name="Monitor" :size="24" /></span>
       <div>
-        <p class="eyebrow">{{ t("ESTE COMPUTADOR") }}</p>
+        <p class="eyebrow">{{ t("THIS COMPUTER") }}</p>
         <h2 id="this-computer-heading">
           {{
             registration?.deviceUid
               ? (current?.name ?? registration.name)
-              : t("Conecte este PC uma única vez")
+              : t("Connect this PC once")
           }}
         </h2>
       </div>
@@ -89,10 +89,10 @@ function submit() {
         <AppIcon :name="current ? 'Check' : 'Clock3'" :size="16" />
         {{
           current
-            ? t("Vinculado à conta")
+            ? t("Linked to account")
             : missing
-              ? t("Registro indisponível")
-              : t("Verificando vínculo")
+              ? t("Registration unavailable")
+              : t("Checking connection")
         }}
       </span>
     </div>
@@ -100,14 +100,14 @@ function submit() {
       <p v-if="missing" role="status">
         {{
           t(
-            "O registro deste PC não apareceu no Drive. Confira a versão web antes de criar outro.",
+            "This PC’s registration was not found in Drive. Check the web app before creating another.",
           )
         }}
       </p>
       <p v-else>
         {{
           t(
-            "Este PC já está conectado. Escolha as pastas para sincronizar; não é necessário registrá-lo novamente.",
+            "This PC is already connected. Choose the folders to sync; there is no need to register it again.",
           )
         }}
       </p>
@@ -118,7 +118,7 @@ function submit() {
           @click="emit('sync', current)"
         >
           <AppIcon name="FolderPlus" :size="18" />{{
-            t("Adicionar pasta deste PC")
+            t("Add a folder from this PC")
           }}
         </button>
         <button
@@ -126,14 +126,14 @@ function submit() {
           class="btn btn-outline btn-sm"
           @click="emit('open', current)"
         >
-          {{ t("Ver pastas") }}<AppIcon name="ChevronRight" :size="18" />
+          {{ t("View folders") }}<AppIcon name="ChevronRight" :size="18" />
         </button>
         <button
           v-if="missing"
           class="btn btn-outline btn-sm"
           @click="emit('web')"
         >
-          {{ t("Abrir versão web") }}
+          {{ t("Open web version") }}
         </button>
       </div>
     </template>
@@ -141,13 +141,13 @@ function submit() {
       <p>
         {{
           t(
-            "Já aparece na lista? Vincule o registro existente. Crie um novo apenas se este PC ainda não estiver no Drive.",
+            "Already listed? Link the existing registration. Create a new one only if this PC is not in Drive yet.",
           )
         }}
       </p>
       <template v-if="linuxDevices.length && !pending">
         <label class="field-label" for="computer-existing">{{
-          t("Qual destes é este computador?")
+          t("Which one is this computer?")
         }}</label>
         <select
           id="computer-existing"
@@ -155,7 +155,7 @@ function submit() {
           class="select w-full"
           :disabled="busy || loading"
         >
-          <option disabled value="">{{ t("Selecione um computador") }}</option>
+          <option disabled value="">{{ t("Select a computer") }}</option>
           <option
             v-for="device in linuxDevices"
             :key="device.uid"
@@ -164,13 +164,13 @@ function submit() {
             {{ device.name }}
           </option>
           <option value="new">
-            {{ t("Este PC ainda não está na lista") }}
+            {{ t("This PC is not listed yet") }}
           </option>
         </select>
       </template>
       <template v-if="(!linuxDevices.length || choice === 'new') && !pending">
         <label class="field-label" for="computer-name">{{
-          t("Nome do computador")
+          t("Computer name")
         }}</label>
         <input
           id="computer-name"
@@ -185,7 +185,7 @@ function submit() {
       <p v-if="pending" role="status">
         {{
           t(
-            "Vamos concluir o vínculo de {0}, aproveitando o registro da tentativa anterior.",
+            "We’ll finish linking {0}, reusing the registration from the previous attempt.",
             [registration!.name],
           )
         }}
@@ -195,10 +195,10 @@ function submit() {
         <AppIcon v-else name="Monitor" :size="18" />
         {{
           busy
-            ? t("Conectando computador…")
+            ? t("Connecting computer…")
             : pending
-              ? t("Concluir conexão")
-              : t("Vincular este computador")
+              ? t("Finish connecting")
+              : t("Link this computer")
         }}
       </button>
     </form>

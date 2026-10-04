@@ -48,19 +48,19 @@ useTrayNavigation(
   (error) => toast(error, true),
 );
 const nav: { id: Page; label: string; icon: IconName }[] = [
-  { id: "overview", label: "Visão geral", icon: "LayoutDashboard" },
-  { id: "folders", label: "Pastas sincronizadas", icon: "Folder" },
-  { id: "queue", label: "Fila de operações", icon: "ListOrdered" },
-  { id: "activity", label: "Atividade", icon: "History" },
-  { id: "drive", label: "Biblioteca", icon: "Cloud" },
+  { id: "overview", label: "Overview", icon: "LayoutDashboard" },
+  { id: "folders", label: "Synced folders", icon: "Folder" },
+  { id: "queue", label: "Operation queue", icon: "ListOrdered" },
+  { id: "activity", label: "Activity", icon: "History" },
+  { id: "drive", label: "Library", icon: "Cloud" },
 ];
 const titles: Record<Page, string> = {
-  overview: "Visão geral",
-  folders: "Pastas sincronizadas",
-  activity: "Atividade",
-  queue: "Fila de operações",
-  drive: "Biblioteca",
-  settings: "Configurações",
+  overview: "Overview",
+  folders: "Synced folders",
+  activity: "Activity",
+  queue: "Operation queue",
+  drive: "Library",
+  settings: "Settings",
 };
 const enabled = computed(
   () => state.value.config.pairs.filter((pair) => pair.enabled).length,
@@ -103,15 +103,15 @@ const pairChanging = (id: string) =>
 const statusText = computed(() =>
   state.value.runtime.busy
     ? ({
-        sync: t("Sincronizando"),
-        login: t("Conectando conta"),
-        update: t("Atualizando CLI"),
-      }[state.value.runtime.operation] ?? t("Trabalhando"))
+        sync: t("Syncing"),
+        login: t("Connecting account"),
+        update: t("Updating CLI"),
+      }[state.value.runtime.operation] ?? t("Working"))
     : !state.value.runtime.connected
-      ? t("Conta não conectada")
+      ? t("Account not connected")
       : state.value.config.paused
-        ? t("Sincronização pausada")
-        : t("Pronto para sincronizar"),
+        ? t("Sync paused")
+        : t("Ready to sync"),
 );
 const time = (timestamp: number | null) =>
   timestamp
@@ -128,7 +128,7 @@ const date = (timestamp: number | null) =>
         hour: "2-digit",
         minute: "2-digit",
       })
-    : t("Ainda não verificado");
+    : t("Not checked yet");
 const eventIcon = (kind: string): IconName =>
   (
     ({
@@ -140,14 +140,11 @@ const eventIcon = (kind: string): IconName =>
   )[kind] ?? "Clock3";
 function addPair() {
   if (!native.value) {
-    toast(
-      t("Abra o aplicativo desktop para selecionar e sincronizar pastas."),
-      true,
-    );
+    toast(t("Open the desktop app to select and sync folders."), true);
     return;
   }
   if (!state.value.runtime.connected) {
-    toast(t("Conecte sua conta Proton antes de adicionar uma pasta."), true);
+    toast(t("Connect your Proton account before adding a folder."), true);
     return;
   }
   editing.value = undefined;
@@ -162,9 +159,7 @@ async function savedLibrary() {
   showLibrary.value = false;
   await refresh();
   page.value = "folders";
-  toast(
-    t("Biblioteca configurada. A sincronização será iniciada automaticamente."),
-  );
+  toast(t("Library configured. Sync will start automatically."));
 }
 function editPair(pair: SyncPair) {
   editing.value = pair;
@@ -174,9 +169,7 @@ async function savedPair() {
   showPair.value = false;
   await refresh();
   toast(
-    t(
-      "Pasta conectada. Alterações no computador serão sincronizadas automaticamente.",
-    ),
+    t("Folder connected. Changes on your computer will sync automatically."),
   );
 }
 async function connect() {
@@ -186,7 +179,7 @@ async function connect() {
 }
 async function update() {
   updating.value = true;
-  await act("update_cli", undefined, t("Verificação do CLI concluída."));
+  await act("update_cli", undefined, t("CLI check complete."));
   updating.value = false;
 }
 async function togglePair(pair: SyncPair) {
@@ -220,14 +213,12 @@ watch(page, async () => {
 
 <template>
   <div class="desktop-shell" data-theme="drive">
-    <a class="skip-link" href="#main-content">{{
-      t("Pular para o conteúdo")
-    }}</a>
+    <a class="skip-link" href="#main-content">{{ t("Skip to content") }}</a>
     <aside class="sidebar">
       <a
         href="#"
         class="brand"
-        :aria-label="t('CapyDock — início')"
+        :aria-label="t('CapyDock — home')"
         @click.prevent="page = 'overview'"
         ><img
           class="brand-capy"
@@ -239,8 +230,8 @@ watch(page, async () => {
         />
         <div><strong>CapyDock</strong><span>DESKTOP</span></div></a
       >
-      <div class="workspace-label">{{ t("ESPAÇO PESSOAL") }}</div>
-      <nav :aria-label="t('Navegação principal')">
+      <div class="workspace-label">{{ t("PERSONAL SPACE") }}</div>
+      <nav :aria-label="t('Main navigation')">
         <button
           v-for="item in nav"
           :key="item.id"
@@ -266,21 +257,21 @@ watch(page, async () => {
           <div class="privacy-icon">
             <AppIcon name="ShieldCheck" :size="20" />
           </div>
-          <strong> {{ t("Seus arquivos. Só seus.") }} </strong>
+          <strong> {{ t("Your files. Yours alone.") }} </strong>
           <p>
-            {{ t("Protegidos pela criptografia de ponta a ponta da Proton.") }}
+            {{ t("Protected by Proton end-to-end encryption.") }}
           </p>
-          <span> {{ t("PRIVACIDADE POR PADRÃO") }} </span>
+          <span> {{ t("PRIVATE BY DEFAULT") }} </span>
         </div>
         <button
           class="nav-item"
           :class="{ active: page === 'settings' }"
           :aria-current="page === 'settings' ? 'page' : undefined"
-          :aria-label="t('Configurações')"
-          :title="t('Configurações')"
+          :aria-label="t('Settings')"
+          :title="t('Settings')"
           @click="page = 'settings'"
         >
-          <AppIcon name="Settings2" :size="19" /> {{ t("Configurações") }}
+          <AppIcon name="Settings2" :size="19" /> {{ t("Settings") }}
         </button>
         <div class="account">
           <div class="avatar placeholder">
@@ -295,21 +286,21 @@ watch(page, async () => {
           <div class="account-copy">
             <strong>{{
               state.runtime.connected
-                ? (state.config.accountEmail ?? t("Conta Proton"))
-                : t("Sua conta Proton")
+                ? (state.config.accountEmail ?? t("Proton account"))
+                : t("Your Proton account")
             }}</strong
             ><span>{{
               state.runtime.connected
-                ? t("Conectada ao desktop")
-                : t("Conecte para começar")
+                ? t("Connected to desktop")
+                : t("Connect to get started")
             }}</span>
           </div>
           <button
             class="btn btn-ghost btn-square btn-sm"
             :aria-label="
               state.runtime.connected
-                ? t('Configurações da conta')
-                : t('Conectar conta')
+                ? t('Account settings')
+                : t('Connect account')
             "
             :disabled="connecting || !native"
             @click="state.runtime.connected ? (page = 'settings') : connect()"
@@ -327,7 +318,7 @@ watch(page, async () => {
       <header class="topbar">
         <div class="breadcrumb">
           <AppIcon name="Monitor" :size="17" /><span>
-            {{ t("Meu computador") }} </span
+            {{ t("My computer") }} </span
           ><span class="slash">/</span><strong>{{ t(titles[page]) }}</strong>
         </div>
         <div class="topbar-right">
@@ -335,13 +326,13 @@ watch(page, async () => {
             ><AppIcon name="Search" :size="16" /><input
               ref="searchInput"
               v-model="search"
-              :aria-label="t('Buscar pastas')"
-              :placeholder="t('Buscar pastas...')"
+              :aria-label="t('Search folders')"
+              :placeholder="t('Search folders...')"
               @input="page = 'folders'"
             /><kbd>Ctrl K</kbd></label
           ><button
             class="btn btn-ghost btn-square btn-sm"
-            :aria-label="t('Ajuda e informações')"
+            :aria-label="t('Help and information')"
             @click="page = 'settings'"
           >
             <AppIcon name="CircleHelp" :size="19" />
@@ -353,7 +344,7 @@ watch(page, async () => {
           <AppIcon name="Monitor" :size="16" /><span>
             {{
               t(
-                "Prévia da interface · conexão e sincronização disponíveis no aplicativo desktop.",
+                "Interface preview · connection and sync are available in the desktop app.",
               )
             }}
           </span>
@@ -382,12 +373,10 @@ watch(page, async () => {
         >
           <span class="loading loading-spinner loading-sm" />
           <div>
-            <strong> {{ t("Continue no navegador") }} </strong>
+            <strong> {{ t("Continue in your browser") }} </strong>
             <p>
               {{
-                t(
-                  "Faça login na Proton. Esta janela será atualizada quando a conexão terminar.",
-                )
+                t("Sign in to Proton. This window will update once connected.")
               }}
             </p>
           </div>
@@ -399,40 +388,38 @@ watch(page, async () => {
         >
           <span class="loading loading-spinner loading-sm" />
           <div>
-            <strong> {{ t("Sincronizando seus arquivos") }} </strong>
+            <strong> {{ t("Syncing your files") }} </strong>
             <p>
               {{
                 state.runtime.currentFile
                   ? message(state.runtime.currentFile)
-                  : t("Preparando a sincronização…")
+                  : t("Preparing to sync…")
               }}
             </p>
           </div>
           <button class="btn btn-sm btn-ghost" @click="act('cancel_sync')">
-            {{ t("Parar após este arquivo") }}
+            {{ t("Stop after this file") }}
           </button>
         </div>
 
         <template v-if="page === 'overview' || page === 'folders'">
           <div class="page-heading">
             <div>
-              <div class="eyebrow">{{ t("SEU ESPAÇO, EM SINCRONIA") }}</div>
+              <div class="eyebrow">{{ t("YOUR SPACE, IN SYNC") }}</div>
               <h1>
                 {{
                   page === "overview"
-                    ? t("Tudo no seu lugar.")
-                    : t("Suas pastas, conectadas.")
+                    ? t("Everything in its place.")
+                    : t("Your folders, connected.")
                 }}
               </h1>
               <p>
                 {{
                   page === "overview"
                     ? t(
-                        "Do seu computador para a nuvem. Com toda a sua privacidade.",
+                        "From your computer to the cloud. With all your privacy.",
                       )
-                    : t(
-                        "Escolha o que fica em sintonia com o seu Proton Drive.",
-                      )
+                    : t("Choose what stays in sync with your Proton Drive.")
                 }}
               </p>
             </div>
@@ -449,16 +436,16 @@ watch(page, async () => {
           <section v-if="page === 'overview'" class="welcome-card">
             <div class="welcome-copy">
               <span class="mini-label"
-                ><span /> {{ t("SEU DRIVE, MAIS PERTO") }}
+                ><span /> {{ t("YOUR DRIVE, CLOSER") }}
               </span>
               <h2>
-                {{ t("Um só fluxo.") }} <br />
-                {{ t("Onde você estiver.") }}
+                {{ t("One seamless flow.") }} <br />
+                {{ t("Wherever you are.") }}
               </h2>
               <p>
-                {{ t("Suas pastas do Linux e seu Proton Drive,") }}
+                {{ t("Your Linux folders and your Proton Drive,") }}
                 <br class="desktop-break" />
-                {{ t("conectados de um jeito simples e seguro.") }}
+                {{ t("connected simply and securely.") }}
               </p>
               <button
                 v-if="!state.runtime.connected"
@@ -469,9 +456,9 @@ watch(page, async () => {
                 <AppIcon name="LogIn" :size="17" />{{
                   connecting
                     ? state.runtime.operation === "login"
-                      ? t("Conectando…")
-                      : t("Na fila…")
-                    : t("Conectar conta Proton")
+                      ? t("Connecting…")
+                      : t("Queued…")
+                    : t("Connect Proton account")
                 }}<AppIcon name="ArrowRight" :size="16" /></button
               ><button
                 v-else
@@ -479,16 +466,16 @@ watch(page, async () => {
                 :disabled="!native"
                 @click="addPair"
               >
-                <AppIcon name="Plus" :size="18" /> {{ t("Conectar uma pasta") }}
+                <AppIcon name="Plus" :size="18" /> {{ t("Connect a folder") }}
                 <AppIcon name="ArrowRight" :size="16" /></button
               ><span class="welcome-footnote"
                 ><AppIcon name="ShieldCheck" :size="13" />
-                {{ t("Login seguro pelo navegador") }}
+                {{ t("Secure browser sign-in") }}
               </span>
             </div>
             <SyncVisual />
             <div class="hero-caption">
-              <AppIcon name="Monitor" :size="14" /> {{ t("Seu computador") }}
+              <AppIcon name="Monitor" :size="14" /> {{ t("Your computer") }}
               <span>↔</span><AppIcon name="Cloud" :size="15" />Proton Drive
             </div>
           </section>
@@ -498,11 +485,13 @@ watch(page, async () => {
                 ><AppIcon name="Folder" :size="20"
               /></span>
               <div>
-                <span> {{ t("Pastas conectadas") }} </span>
+                <span> {{ t("Connected folders") }} </span>
                 <div class="metric-value">
                   {{ number(state.config.pairs.length)
                   }}<small
-                    >{{ plural("{0} ativa", "{0} ativas", enabled) }}
+                    >{{
+                      plural("{0} active folder", "{0} active folders", enabled)
+                    }}
                   </small>
                 </div>
               </div>
@@ -512,13 +501,13 @@ watch(page, async () => {
                 ><AppIcon name="RefreshCw" :size="20"
               /></span>
               <div>
-                <span> {{ t("Última verificação") }} </span>
+                <span> {{ t("Last checked") }} </span>
                 <div class="metric-value" :class="{ 'metric-empty': !lastRun }">
-                  {{ lastRun ? time(lastRun) : t("Tudo começa aqui")
+                  {{ lastRun ? time(lastRun) : t("It all starts here")
                   }}<small>{{
                     lastRun
                       ? new Date(lastRun * 1000).toLocaleDateString(locale)
-                      : t("Conecte sua primeira pasta")
+                      : t("Connect your first folder")
                   }}</small>
                 </div>
               </div>
@@ -528,10 +517,10 @@ watch(page, async () => {
                 ><AppIcon name="ShieldCheck" :size="21"
               /></span>
               <div>
-                <span> {{ t("Proteção dos arquivos") }} </span>
+                <span> {{ t("File protection") }} </span>
                 <div class="metric-value metric-label">
-                  {{ t("Ponta a ponta") }}
-                  <small> {{ t("Criptografia da Proton") }} </small>
+                  {{ t("End-to-end") }}
+                  <small> {{ t("Proton encryption") }} </small>
                 </div>
               </div>
             </div>
@@ -544,15 +533,15 @@ watch(page, async () => {
               <div class="section-heading">
                 <div>
                   <h2>
-                    {{ t("Pastas sincronizadas") }}
+                    {{ t("Synced folders") }}
                     <span class="count-badge">{{
                       number(state.config.pairs.length)
                     }}</span>
                   </h2>
                   <p>
-                    {{ t("Pastas, fotos e álbuns sempre por perto.") }}
+                    {{ t("Folders, photos and albums always within reach.") }}
                     <button class="text-primary" @click="page = 'drive'">
-                      {{ t("Explorar biblioteca →") }}
+                      {{ t("Explore library →") }}
                     </button>
                   </p>
                 </div>
@@ -561,33 +550,33 @@ watch(page, async () => {
                   :disabled="!native"
                   @click="addPair"
                 >
-                  <AppIcon name="Plus" :size="16" /> {{ t("Adicionar pasta") }}
+                  <AppIcon name="Plus" :size="16" /> {{ t("Add folder") }}
                 </button>
               </div>
               <div class="folder-toolbar">
                 <div
                   class="filter-tabs"
                   role="group"
-                  :aria-label="t('Filtrar pastas')"
+                  :aria-label="t('Filter folders')"
                 >
                   <button
                     :class="{ selected: filter === 'all' }"
                     :aria-pressed="filter === 'all'"
                     @click="filter = 'all'"
                   >
-                    {{ t("Todas") }}</button
+                    {{ t("All folders") }}</button
                   ><button
                     :class="{ selected: filter === 'active' }"
                     :aria-pressed="filter === 'active'"
                     @click="filter = 'active'"
                   >
-                    {{ t("Ativas") }}</button
+                    {{ t("Active") }}</button
                   ><button
                     :class="{ selected: filter === 'paused' }"
                     :aria-pressed="filter === 'paused'"
                     @click="filter = 'paused'"
                   >
-                    {{ t("Pausadas") }}
+                    {{ t("Paused folders") }}
                   </button>
                 </div>
                 <button
@@ -598,9 +587,7 @@ watch(page, async () => {
                   <AppIcon
                     :name="state.config.paused ? 'Play' : 'Pause'"
                     :size="14"
-                  />{{
-                    state.config.paused ? t("Retomar tudo") : t("Pausar tudo")
-                  }}
+                  />{{ state.config.paused ? t("Resume all") : t("Pause all") }}
                 </button>
               </div>
               <div v-if="pairs.length" class="pair-grid">
@@ -630,17 +617,15 @@ watch(page, async () => {
                 <h3>
                   {{
                     state.config.pairs.length
-                      ? t("Nenhuma pasta encontrada")
-                      : t("Sua primeira pasta é o começo.")
+                      ? t("No folders found")
+                      : t("Your first folder is the beginning.")
                   }}
                 </h3>
                 <p>
                   {{
                     state.config.pairs.length
-                      ? t("Tente outro nome ou altere o filtro.")
-                      : t(
-                          "Conecte uma pasta e deixe seus arquivos sempre por perto.",
-                        )
+                      ? t("Try another name or change the filter.")
+                      : t("Connect a folder and keep your files within reach.")
                   }}
                 </p>
                 <button
@@ -650,7 +635,7 @@ watch(page, async () => {
                   @click="addPair"
                 >
                   <AppIcon name="FolderPlus" :size="16" />
-                  {{ t("Escolher uma pasta") }}</button
+                  {{ t("Choose a folder") }}</button
                 ><button
                   v-else
                   class="btn btn-ghost btn-sm"
@@ -659,11 +644,11 @@ watch(page, async () => {
                     filter = 'all';
                   "
                 >
-                  {{ t("Limpar filtros") }}
+                  {{ t("Clear filters") }}
                 </button>
                 <div v-if="!state.config.pairs.length" class="empty-footnote">
                   <AppIcon name="Check" :size="13" />
-                  {{ t("Seus arquivos continuam no computador") }}
+                  {{ t("Your files stay on your computer") }}
                 </div>
               </div>
               <div class="sync-note">
@@ -671,7 +656,7 @@ watch(page, async () => {
                 <p>
                   {{
                     t(
-                      "Você no controle. Configure as exclusões por pasta; conflitos preservam as duas cópias.",
+                      "You're in control. Configure deletions for each folder; conflicts preserve both copies.",
                     )
                   }}
                 </p>
@@ -679,7 +664,7 @@ watch(page, async () => {
             </section>
             <aside v-if="page === 'overview'" class="activity-panel">
               <div class="section-heading">
-                <h2>{{ t("Atividade recente") }}</h2>
+                <h2>{{ t("Recent activity") }}</h2>
                 <span class="live-dot" />
               </div>
               <div v-if="recent.length" class="compact-events">
@@ -697,14 +682,14 @@ watch(page, async () => {
                 <div class="activity-lines">
                   <span /><span /><span /><AppIcon name="Check" :size="18" />
                 </div>
-                <h3>{{ t("Um pouco de tranquilidade.") }}</h3>
+                <h3>{{ t("A little peace of mind.") }}</h3>
                 <p>
-                  {{ t("As sincronizações e atualizações") }} <br />
-                  {{ t("vão aparecer por aqui.") }}
+                  {{ t("Syncs and updates") }} <br />
+                  {{ t("will appear here.") }}
                 </p>
               </div>
               <button class="activity-link" @click="page = 'activity'">
-                {{ t("Ver toda a atividade") }}
+                {{ t("View all activity") }}
                 <AppIcon name="ArrowRight" :size="15" />
               </button>
             </aside>
@@ -714,14 +699,10 @@ watch(page, async () => {
         <template v-else-if="page === 'activity'"
           ><div class="page-heading">
             <div>
-              <div class="eyebrow">{{ t("CADA ARQUIVO, CADA ETAPA") }}</div>
-              <h1>{{ t("O que acontece por aqui.") }}</h1>
+              <div class="eyebrow">{{ t("EVERY FILE, EVERY STEP") }}</div>
+              <h1>{{ t("What's happening here.") }}</h1>
               <p>
-                {{
-                  t(
-                    "Acompanhe sincronizações, atualizações e arquivos que precisam de atenção.",
-                  )
-                }}
+                {{ t("Follow syncs, updates and files that need attention.") }}
               </p>
             </div>
           </div>
@@ -729,26 +710,26 @@ watch(page, async () => {
             <div
               class="filter-tabs"
               role="group"
-              :aria-label="t('Filtrar atividade')"
+              :aria-label="t('Filter activity')"
             >
               <button
                 :class="{ selected: activityFilter === 'all' }"
                 :aria-pressed="activityFilter === 'all'"
                 @click="activityFilter = 'all'"
               >
-                {{ t("Tudo") }}</button
+                {{ t("All activity") }}</button
               ><button
                 :class="{ selected: activityFilter === 'success' }"
                 :aria-pressed="activityFilter === 'success'"
                 @click="activityFilter = 'success'"
               >
-                {{ t("Concluídas") }}</button
+                {{ t("Completed operations") }}</button
               ><button
                 :class="{ selected: activityFilter === 'attention' }"
                 :aria-pressed="activityFilter === 'attention'"
                 @click="activityFilter = 'attention'"
               >
-                {{ t("Precisam de atenção") }}
+                {{ t("Needs attention") }}
               </button>
             </div>
             <div v-if="events.length" class="event-table">
@@ -762,24 +743,20 @@ watch(page, async () => {
                 </div>
                 <span class="event-tag">{{
                   event.kind === "success"
-                    ? t("Concluído")
+                    ? t("Completed")
                     : event.kind === "error"
-                      ? t("Erro")
+                      ? t("Error")
                       : event.kind === "conflict"
-                        ? t("Revisar")
-                        : t("Informação")
+                        ? t("Review")
+                        : t("Information")
                 }}</span>
               </div>
             </div>
             <div v-else class="large-empty">
               <AppIcon name="History" :size="40" />
-              <h2>{{ t("Nenhuma atividade ainda.") }}</h2>
+              <h2>{{ t("No activity yet.") }}</h2>
               <p>
-                {{
-                  t(
-                    "Assim que houver uma sincronização, você acompanha tudo aqui.",
-                  )
-                }}
+                {{ t("As soon as a sync runs, you can follow it here.") }}
               </p>
             </div>
           </section>
@@ -788,7 +765,7 @@ watch(page, async () => {
             <p>
               {{
                 t(
-                  "Um conflito significa que um arquivo mudou nos dois lados ou que uma cópia foi removida. Compare as cópias no computador e no Drive e deixe o conteúdo desejado nos dois lados. A próxima sincronização reconhecerá que os arquivos são iguais.",
+                  "A conflict means a file changed on both sides or a copy was removed. Compare the copies on your computer and in Drive, and keep the content you want on both sides. The next sync will recognize that the files are identical.",
                 )
               }}
             </p>
@@ -814,14 +791,10 @@ watch(page, async () => {
         <template v-else-if="page === 'settings'"
           ><div class="page-heading">
             <div>
-              <div class="eyebrow">{{ t("DO SEU JEITO") }}</div>
-              <h1>{{ t("Pequenos ajustes. Tudo certo.") }}</h1>
+              <div class="eyebrow">{{ t("YOUR WAY") }}</div>
+              <h1>{{ t("Small adjustments. All set.") }}</h1>
               <p>
-                {{
-                  t(
-                    "Gerencie sua conta e deixe o aplicativo trabalhar para você.",
-                  )
-                }}
+                {{ t("Manage your account and let the app work for you.") }}
               </p>
             </div>
           </div>
@@ -833,19 +806,21 @@ watch(page, async () => {
             <section class="surface settings-card">
               <div class="settings-heading">
                 <AppIcon name="Monitor" :size="21" />
-                <h2>{{ t("Aplicativo e sincronização") }}</h2>
+                <h2>{{ t("App and sync") }}</h2>
               </div>
               <div class="setting-row">
                 <div>
-                  <strong> {{ t("Iniciar com o computador") }} </strong>
+                  <strong> {{ t("Start with your computer") }} </strong>
                   <p>
-                    {{ t("Abra o aplicativo ao entrar na sua sessão Linux.") }}
+                    {{
+                      t("Open the app when you sign in to your Linux session.")
+                    }}
                   </p>
                 </div>
                 <input
                   type="checkbox"
                   class="toggle toggle-primary toggle-sm"
-                  :aria-label="t('Iniciar com o computador')"
+                  :aria-label="t('Start with your computer')"
                   :checked="state.autostart"
                   :disabled="!native || preferencesSaving"
                   @change="
@@ -864,13 +839,15 @@ watch(page, async () => {
               />
               <div class="setting-row">
                 <div>
-                  <strong> {{ t("Pausar sincronizações") }} </strong>
-                  <p>{{ t("A operação atual termina antes da pausa.") }}</p>
+                  <strong> {{ t("Pause syncs") }} </strong>
+                  <p>
+                    {{ t("The current operation finishes before pausing.") }}
+                  </p>
                 </div>
                 <input
                   type="checkbox"
                   class="toggle toggle-primary toggle-sm"
-                  :aria-label="t('Pausar sincronizações')"
+                  :aria-label="t('Pause syncs')"
                   :checked="state.config.paused"
                   :disabled="!native || preferencesSaving"
                   @change="
@@ -885,7 +862,7 @@ watch(page, async () => {
                 <p>
                   {{
                     t(
-                      "Com System tray ativado, a sincronização continua mesmo com a janela oculta. Alterações locais disparam a sincronização; a busca de mudanças no Drive usa o intervalo de cada pasta.",
+                      "With System tray enabled, syncing continues even when the window is hidden. Local changes trigger syncing; checking for changes in Drive uses each folder’s interval.",
                     )
                   }}
                 </p>
@@ -899,21 +876,21 @@ watch(page, async () => {
                   state.runtime.cliVersion
                     ? `v${state.runtime.cliVersion}`
                     : native
-                      ? t("Carregando")
+                      ? t("Loading")
                       : t("Desktop")
                 }}</span>
               </div>
               <div class="setting-row">
                 <div>
-                  <strong> {{ t("Atualizar automaticamente") }} </strong>
+                  <strong> {{ t("Update automatically") }} </strong>
                   <p>
-                    {{ t("Verifica novas versões estáveis a cada 24 horas.") }}
+                    {{ t("Checks for new stable versions every 24 hours.") }}
                   </p>
                 </div>
                 <input
                   type="checkbox"
                   class="toggle toggle-primary toggle-sm"
-                  :aria-label="t('Atualizar CLI automaticamente')"
+                  :aria-label="t('Update CLI automatically')"
                   :checked="state.config.autoUpdate"
                   :disabled="!native || preferencesSaving"
                   @change="
@@ -926,10 +903,10 @@ watch(page, async () => {
               <div class="update-details">
                 <span
                   ><AppIcon name="ShieldCheck" :size="15" />
-                  {{ t("Fonte oficial · SHA-512 verificado") }}
+                  {{ t("Official source · SHA-512 verified") }}
                 </span>
                 <p>
-                  {{ t("Última verificação:") }}
+                  {{ t("Last checked:") }}
                   {{ date(state.config.lastUpdateCheck) }}
                 </p>
                 <button
@@ -944,9 +921,9 @@ watch(page, async () => {
                   />{{
                     updating
                       ? state.runtime.operation === "update"
-                        ? t("Verificando…")
-                        : t("Na fila…")
-                      : t("Verificar atualização")
+                        ? t("Checking…")
+                        : t("Queued…")
+                      : t("Check for updates")
                   }}
                 </button>
               </div>
@@ -954,7 +931,7 @@ watch(page, async () => {
             <section class="surface settings-card">
               <div class="settings-heading">
                 <AppIcon name="ShieldCheck" :size="21" />
-                <h2>{{ t("Conta Proton") }}</h2>
+                <h2>{{ t("Proton account") }}</h2>
               </div>
               <div class="connection-detail">
                 <span
@@ -962,8 +939,8 @@ watch(page, async () => {
                   :class="{ online: state.runtime.connected }"
                   ><span class="status-dot" />{{
                     state.runtime.connected
-                      ? t("Conectada")
-                      : t("Não conectada")
+                      ? t("Connected")
+                      : t("Not connected")
                   }}</span
                 ><strong v-if="state.config.accountEmail">{{
                   state.config.accountEmail
@@ -971,7 +948,7 @@ watch(page, async () => {
                 <p>
                   {{
                     t(
-                      "O login acontece pelo navegador. As credenciais ficam no cofre seguro do sistema operacional.",
+                      "Sign-in happens in your browser. Credentials are stored in your operating system's secure keyring.",
                     )
                   }}
                 </p>
@@ -985,7 +962,7 @@ watch(page, async () => {
                     :disabled="connecting || !native"
                     @click="connect"
                   >
-                    {{ t("Conectar conta") }}</button
+                    {{ t("Connect account") }}</button
                   ><button
                     v-else
                     class="btn btn-outline btn-sm"
@@ -993,13 +970,13 @@ watch(page, async () => {
                     @click="act('logout')"
                   >
                     <AppIcon name="LogOut" :size="15" />
-                    {{ t("Desconectar") }}</button
+                    {{ t("Disconnect") }}</button
                   ><button
                     class="btn btn-ghost btn-sm"
                     :disabled="!native"
                     @click="act('refresh_connection')"
                   >
-                    {{ t("Verificar conexão") }}
+                    {{ t("Check connection") }}
                   </button>
                 </div>
               </div>
@@ -1007,7 +984,7 @@ watch(page, async () => {
             <section class="surface settings-card about-card">
               <div class="settings-heading">
                 <AppIcon name="Sparkles" :size="21" />
-                <h2>{{ t("Feito para o seu Linux") }}</h2>
+                <h2>{{ t("Made for your Linux") }}</h2>
               </div>
               <p>
                 CapyDock <strong>{{ appVersion }}</strong>
@@ -1015,17 +992,15 @@ watch(page, async () => {
               <p>
                 {{
                   t(
-                    "Interface independente construída com Tauri, Nuxt e DaisyUI. Usa o CLI oficial da Proton.",
+                    "Independent interface built with Tauri, Nuxt and DaisyUI. Uses the official Proton CLI.",
                   )
                 }}
               </p>
               <p class="muted">
-                {{
-                  t("Este aplicativo não é um produto oficial da Proton AG.")
-                }}
+                {{ t("This app is not an official Proton AG product.") }}
               </p>
               <div v-if="state.dataPath" class="data-path">
-                <span> {{ t("Configurações e histórico") }} </span
+                <span> {{ t("Settings and history") }} </span
                 ><code>{{ state.dataPath }}</code>
               </div>
             </section>
@@ -1035,10 +1010,10 @@ watch(page, async () => {
         <footer class="app-footer">
           <span
             ><AppIcon name="ShieldCheck" :size="14" />
-            {{ t("Privacidade em cada sincronização.") }} </span
+            {{ t("Privacy in every sync.") }} </span
           ><span
             >Linux <span class="footer-dot">·</span>
-            {{ t("Cliente independente") }} <span class="footer-dot">·</span>
+            {{ t("Independent client") }} <span class="footer-dot">·</span>
             {{
               state.runtime.cliVersion
                 ? t("CLI {0}", [state.runtime.cliVersion])
@@ -1062,7 +1037,7 @@ watch(page, async () => {
         <p>{{ message(notification.message) }}</p>
         <button
           class="btn btn-ghost btn-square btn-xs"
-          :aria-label="t('Fechar notificação')"
+          :aria-label="t('Dismiss notification')"
           @click="notification = null"
         >
           <AppIcon name="X" :size="16" />
@@ -1085,25 +1060,25 @@ watch(page, async () => {
     <dialog ref="removeDialog" class="modal" aria-labelledby="remove-title">
       <div class="modal-box">
         <h2 id="remove-title" class="text-xl font-semibold">
-          {{ t("Remover {0}?", [removing?.name]) }}
+          {{ t("Remove {0}?", [removing?.name]) }}
         </h2>
         <p class="py-4 text-sm">
           {{
             t(
-              "Os arquivos no computador e no Proton Drive serão mantidos. Apenas o pareamento de sincronização será removido.",
+              "Files on your computer and in Proton Drive will be kept. Only the sync pairing will be removed.",
             )
           }}
         </p>
         <div class="modal-action">
           <button class="btn btn-ghost" @click="removeDialog?.close()">
-            {{ t("Cancelar") }}</button
+            {{ t("Cancel") }}</button
           ><button class="btn btn-error" @click="removePair">
-            {{ t("Remover pareamento") }}
+            {{ t("Remove pairing") }}
           </button>
         </div>
       </div>
       <form method="dialog" class="modal-backdrop">
-        <button>{{ t("Fechar") }}</button>
+        <button>{{ t("Close") }}</button>
       </form>
     </dialog>
   </div>

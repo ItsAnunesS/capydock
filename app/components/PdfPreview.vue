@@ -43,7 +43,7 @@ onMounted(async () => {
     total.value = document.numPages;
     await render();
   } catch (e) {
-    error.value = t("Não foi possível ler este PDF: {0}", [String(e)]);
+    error.value = t("Couldn't read this PDF: {0}", [String(e)]);
   } finally {
     busy.value = false;
   }
@@ -63,7 +63,7 @@ async function render() {
     const scale = Math.min(2, 1500 / Math.max(base.width, base.height));
     const viewport = pdfPage.getViewport({ scale });
     const context = canvas.value.getContext("2d");
-    if (!context) throw new Error(t("Canvas indisponível"));
+    if (!context) throw new Error(t("Canvas unavailable"));
     canvas.value.width = viewport.width;
     canvas.value.height = viewport.height;
     renderTask = pdfPage.render({
@@ -96,15 +96,15 @@ async function navigate(delta: number) {
       <button
         class="btn btn-sm btn-ghost"
         :disabled="busy || page <= 1"
-        :aria-label="t('Página anterior')"
+        :aria-label="t('Previous page')"
         @click="navigate(-1)"
       >
         <AppIcon name="ArrowLeft" :size="17" /></button
-      ><span>{{ t("Página {0} de {1}", [page, total || "…"]) }}</span
+      ><span>{{ t("Page {0} of {1}", [page, total || "…"]) }}</span
       ><button
         class="btn btn-sm btn-ghost"
         :disabled="busy || page >= total"
-        :aria-label="t('Próxima página')"
+        :aria-label="t('Next page')"
         @click="navigate(1)"
       >
         <AppIcon name="ArrowRight" :size="17" /></button
@@ -113,7 +113,7 @@ async function navigate(delta: number) {
         :aria-pressed="showText"
         @click="showText = !showText"
       >
-        {{ t("Texto acessível") }}
+        {{ t("Accessible text") }}
       </button>
     </div>
     <p v-if="error" class="form-error" role="alert">{{ message(error) }}</p>
@@ -121,11 +121,11 @@ async function navigate(delta: number) {
       <canvas
         ref="canvas"
         role="img"
-        :aria-label="t('Página {0} do documento PDF', [page])"
+        :aria-label="t('Page {0} of the PDF document', [page])"
       />
     </div>
     <pre v-if="showText" class="pdf-text" aria-live="polite">{{
-      textContent || t("Esta página não contém texto selecionável.")
+      textContent || t("This page contains no selectable text.")
     }}</pre>
   </div>
 </template>

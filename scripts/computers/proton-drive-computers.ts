@@ -39,7 +39,7 @@ try {
   process.exit(0);
 } catch (error) {
   console.error(
-    error instanceof Error ? error.message : "Falha ao registrar computador.",
+    error instanceof Error ? error.message : "Failed to register computer.",
   );
   process.exit(1);
 }

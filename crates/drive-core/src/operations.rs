@@ -12,8 +12,8 @@ use std::{
 };
 use tokio::sync::Notify;
 
-pub const CANCELLED: &str = "Operação cancelada.";
-pub const PREEMPTED: &str = "Consulta interrompida para manutenção; será retomada automaticamente.";
+pub const CANCELLED: &str = "Operation cancelled.";
+pub const PREEMPTED: &str = "Request interrupted for maintenance; it will resume automatically.";
 const HISTORY_LIMIT: usize = 30;
 const WAITING_LIMIT: usize = 256;
 
@@ -175,7 +175,7 @@ impl OperationQueue {
                 .entries
                 .iter_mut()
                 .find(|e| e.view.id == id)
-                .ok_or("Operação não encontrada.")?;
+                .ok_or("Operation not found.")?;
             match entry.view.status {
                 Status::Queued => {
                     entry.view.status = Status::Cancelled;
@@ -186,8 +186,7 @@ impl OperationQueue {
                 }
                 Status::Running => {
                     return Err(
-                        "Esta operação já começou e precisa terminar para preservar os dados."
-                            .into(),
+                        "This operation has started and must finish to preserve data.".into(),
                     )
                 }
                 _ => return Ok(()),
@@ -268,7 +267,7 @@ impl OperationQueue {
                 .count()
                 >= WAITING_LIMIT
             {
-                return Err("A fila atingiu 256 operações. Cancele itens pendentes ou espere a fila avançar.".into());
+                return Err("The queue reached 256 operations. Cancel pending items or wait for the queue to advance.".into());
             }
             if spec.lane == Lane::Exclusive {
                 // Read-only futures can be dropped safely; do not wait for an entire
@@ -600,7 +599,7 @@ mod tests {
                 q.execute(Spec::new("download", i.to_string(), ""), |_| async move {
                     called.lock().unwrap().push(i);
                     if i == 3 {
-                        Err("Falha de rede".into())
+                        Err("Network failure".into())
                     } else {
                         Ok(i)
                     }
@@ -621,7 +620,7 @@ mod tests {
         }
         assert_eq!(
             results,
-            vec![Err(CANCELLED.into()), Err("Falha de rede".into()), Ok(4)]
+            vec![Err(CANCELLED.into()), Err("Network failure".into()), Ok(4)]
         );
         assert_eq!(*called.lock().unwrap(), vec![3, 4]);
         assert_eq!(
@@ -684,7 +683,7 @@ mod tests {
                     ..Spec::new("sync", "Sync", "")
                 },
                 |ctx| async move {
-                    ctx.progress(Some("pair".into()), "Enviando arquivo.txt");
+                    ctx.progress(Some("pair".into()), "Uploading file.txt");
                     context_tx.send(ctx.cancel).unwrap();
                     wait.await.unwrap();
                     Ok(())
@@ -697,7 +696,7 @@ mod tests {
         queue.cancel(&first_id).unwrap();
         assert!(flag.load(Ordering::Relaxed));
         assert_eq!(queue.snapshot().items[0].status, Status::Cancelling);
-        assert_eq!(queue.snapshot().items[0].detail, "Enviando arquivo.txt");
+        assert_eq!(queue.snapshot().items[0].detail, "Uploading file.txt");
         let q = queue.clone();
         let second = tokio::spawn(async move {
             q.execute(Spec::new("download", "next", ""), |_| async { Ok(()) })

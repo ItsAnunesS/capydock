@@ -139,7 +139,7 @@ const command = async <T = void>(
       content: pdf.base64,
       name: base.name,
     } as T;
-  throw new Error("Ação indisponível no teste isolado.");
+  throw new Error("Action unavailable in the isolated test.");
 };
 const testNow = Math.floor(Date.now() / 1000);
 function testJob(
@@ -170,28 +170,28 @@ const queueState = ref<QueueState>({
   items: [
     testJob(
       "sync",
-      encodeMessage("Sincronizar {0}", ["Documentos"]),
-      encodeMessage("Enviando · {0}", ["Projetos/Apresentação.pdf"]),
+      encodeMessage("Sync {0}", ["Documents"]),
+      encodeMessage("Uploading · {0}", ["Projetos/Apresentação.pdf"]),
       "running",
       42,
     ),
     testJob(
       "download",
-      "Baixar arquivo",
+      "Download file",
       "/devices/Meu PC Linux/Projetos/Briefing.pdf",
       "queued",
       18,
     ),
     {
-      ...testJob("albums", "Carregar biblioteca", "/albums", "queued", 12),
+      ...testJob("albums", "Load library", "/albums", "queued", 12),
       lane: "interactive",
     },
     {
       ...testJob(
         "index",
-        "Indexar documentos",
+        "Index documents",
         encodeMessage(
-          "{0} pastas verificadas · {1} documentos · {2} pastas pendentes",
+          "{0} folders checked · {1} documents · {2} folders pending",
           [128, 246, 36],
         ),
         "running",
@@ -202,14 +202,14 @@ const queueState = ref<QueueState>({
       automatic: true,
     },
     {
-      ...testJob("browse", "Carregar biblioteca", "/devices", "running", 1),
+      ...testJob("browse", "Load library", "/devices", "running", 1),
       lane: "interactive",
       kind: "browse",
     },
     testJob(
       "photos",
-      encodeMessage("Sincronizar {0}", ["Fotos"]),
-      encodeMessage("Recebendo · {0}", ["Fotos da viagem.jpg"]),
+      encodeMessage("Sync {0}", ["Photos"]),
+      encodeMessage("Downloading · {0}", ["Fotos da viagem.jpg"]),
       "completed",
       110,
     ),
@@ -223,7 +223,7 @@ createApp({
       h(
         "p",
         { style: "color:#9b6295;margin-bottom:20px;font-size:12px" },
-        "TESTE ISOLADO · dados fictícios · nenhuma conta conectada",
+        "ISOLATED TEST · fictional data · no account connected",
       ),
       h(LanguageSetting, { onChange: setLocale }),
       queuePreview

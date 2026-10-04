@@ -2,6 +2,7 @@ import { computed, readonly, ref } from "vue";
 import pt from "~/i18n/pt.json";
 import en from "~/i18n/en.json";
 import es from "~/i18n/es.json";
+import legacyKeys from "~/i18n/legacy-keys.json";
 
 export type Locale = "pt" | "en" | "es";
 export const defaultLocale: Locale = "en";
@@ -45,8 +46,8 @@ export function setLocale(value: Locale) {
     document.documentElement.lang = locale.value;
 }
 
-// The Portuguese source is the stable message key. Parameters are data, never
-// lookup keys: a file called "Documentos" must stay "Documentos" in every language.
+// Source messages use English keys. Legacy aliases keep saved activity readable.
+// Parameters are data, never lookup keys: user filenames must remain unchanged.
 export function encodeMessage(key: string, values: MessageValue[] = []) {
   return messagePrefix + JSON.stringify({ key, values });
 }
@@ -58,6 +59,8 @@ export function useI18n() {
     values: MessageValue[] = [],
     depth = 0,
   ): string {
+    if (Object.hasOwn(legacyKeys, key))
+      key = legacyKeys[key as keyof typeof legacyKeys];
     const lookup = (dictionary: Record<string, string>) => {
       const value = Object.hasOwn(dictionary, key)
         ? dictionary[key]

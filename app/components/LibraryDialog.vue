@@ -21,7 +21,7 @@ async function choose() {
     const path = await open({
       directory: true,
       multiple: false,
-      title: t("Pasta para sua biblioteca Proton"),
+      title: t("Folder for your Proton library"),
     });
     if (typeof path === "string") localPath.value = path;
   } catch (e) {
@@ -57,23 +57,23 @@ async function save() {
         <div class="folder-icon"><AppIcon name="HardDrive" :size="25" /></div>
         <button
           class="btn btn-ghost btn-square btn-sm"
-          :aria-label="t('Fechar')"
+          :aria-label="t('Close')"
           @click="dialog?.close()"
         >
           <AppIcon name="X" />
         </button>
       </div>
-      <h2 id="library-setup-title">{{ t("Sua biblioteca, também no PC.") }}</h2>
+      <h2 id="library-setup-title">{{ t("Your library, on your PC too.") }}</h2>
       <p class="dialog-subtitle">
         {{
           t(
-            "Escolha uma pasta para Arquivos, Fotos e Álbuns desta conta. Computadores são configurados separadamente; Docs e Sheets continuam online.",
+            "Choose a folder for this account’s Files, Photos and Albums. Computers are configured separately; Docs and Sheets remain online.",
           )
         }}
       </p>
       <form @submit.prevent="save">
         <label class="field-label" for="library-root">
-          {{ t("Onde guardar sua biblioteca") }}
+          {{ t("Where to keep your library") }}
         </label>
         <div class="input-with-button">
           <input
@@ -81,44 +81,44 @@ async function save() {
             :value="localPath"
             readonly
             class="input w-full"
-            :placeholder="t('Escolha uma pasta no computador')"
+            :placeholder="t('Choose a folder on your computer')"
           /><button
             type="button"
             class="btn btn-soft"
             :disabled="busy"
             @click="choose"
           >
-            {{ t("Escolher") }}
+            {{ t("Choose") }}
           </button>
         </div>
         <div class="sync-plan">
           <div>
             <AppIcon name="Folder" /><span
-              ><strong> {{ t("Arquivos") }} </strong
+              ><strong> {{ t("Files") }} </strong
               ><small>
-                {{ t("Todas as pastas · computador ↔ Drive") }}
+                {{ t("All folders · computer ↔ Drive") }}
               </small></span
             ><AppIcon name="Check" :size="17" />
           </div>
           <div>
             <AppIcon name="Image" /><span
-              ><strong> {{ t("Fotos") }} </strong
+              ><strong> {{ t("Photos") }} </strong
               ><small>
-                {{ t("Receber a biblioteca e enviar novas fotos") }}
+                {{ t("Download the library and upload new photos") }}
               </small></span
             ><input
               v-model="includePhotos"
               type="checkbox"
               class="checkbox checkbox-primary checkbox-sm"
-              :aria-label="t('Incluir fotos e álbuns')"
+              :aria-label="t('Include photos and albums')"
               :disabled="busy"
             />
           </div>
           <div :class="{ 'opacity-40': !includePhotos }">
             <AppIcon name="Images" /><span
-              ><strong> {{ t("Álbuns") }} </strong
+              ><strong> {{ t("Albums") }} </strong
               ><small>
-                {{ t("Cópia contínua organizada por álbum · Drive → PC") }}
+                {{ t("Continuous copy organized by album · Drive → PC") }}
               </small></span
             ><AppIcon name="CloudDownload" :size="17" />
           </div>
@@ -130,11 +130,11 @@ async function save() {
             type="checkbox"
             :disabled="busy"
           /><span
-            ><strong> {{ t("Propagar exclusões de arquivos") }} </strong
+            ><strong> {{ t("Propagate file deletions") }} </strong
             ><small>
               {{
                 t(
-                  "Excluir no PC move a outra cópia para a lixeira do Drive. Excluir no Drive move a cópia local para a pasta de recuperação.",
+                  "Deleting on your PC moves the other copy to Drive trash. Deleting in Drive moves the local copy to the recovery folder.",
                 )
               }}
             </small></span
@@ -145,7 +145,7 @@ async function save() {
           <p>
             {{
               t(
-                "Docs e Sheets continuam online. Fotos editadas e exclusões de fotos/álbuns são preservadas para revisão. A cópia por álbum também ocupa espaço no PC.",
+                "Docs and Sheets remain online. Edited photos and photo/album deletions are preserved for review. Album copies also take up space on your PC.",
               )
             }}
           </p>
@@ -153,19 +153,19 @@ async function save() {
         <p v-if="error" class="form-error" role="alert">{{ message(error) }}</p>
         <div class="modal-action">
           <button type="button" class="btn btn-ghost" @click="dialog?.close()">
-            {{ t("Cancelar") }}</button
+            {{ t("Cancel") }}</button
           ><button class="btn btn-primary" :disabled="!localPath || busy">
             <span
               v-if="busy"
               class="loading loading-spinner loading-xs"
             /><AppIcon v-else name="RefreshCw" :size="17" />
-            {{ t("Ativar sincronização") }}
+            {{ t("Enable sync") }}
           </button>
         </div>
       </form>
     </div>
     <form method="dialog" class="modal-backdrop">
-      <button :aria-label="t('Fechar')">{{ t("Fechar") }}</button>
+      <button :aria-label="t('Close')">{{ t("Close") }}</button>
     </form>
   </dialog>
 </template>

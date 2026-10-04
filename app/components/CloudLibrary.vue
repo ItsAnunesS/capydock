@@ -48,14 +48,14 @@ const paths: Record<Tab, string> = {
   albums: "/albums",
 };
 const tabs: { id: Tab; name: string; icon: IconName }[] = [
-  { id: "files", name: "Arquivos", icon: "Folder" },
-  { id: "computers", name: "Computadores", icon: "Monitor" },
-  { id: "documents", name: "Documentos", icon: "FileText" },
-  { id: "photos", name: "Fotos", icon: "Image" },
-  { id: "albums", name: "Álbuns", icon: "Images" },
+  { id: "files", name: "Files", icon: "Folder" },
+  { id: "computers", name: "Computers", icon: "Monitor" },
+  { id: "documents", name: "Documents", icon: "FileText" },
+  { id: "photos", name: "Photos", icon: "Image" },
+  { id: "albums", name: "Albums", icon: "Images" },
 ];
 const path = ref("/my-files");
-const computerName = ref(t("Meu PC Linux"));
+const computerName = ref(t("My Linux PC"));
 const registering = ref(false);
 const localComputer = ref<ComputerRegistration | null>(props.computer ?? null);
 watch(
@@ -77,9 +77,7 @@ async function registerComputer(name: string, existingUid?: string) {
     emit("registered");
     emit(
       "notify",
-      t("{0} vinculado. Agora escolha as pastas para sincronizar.", [
-        device.name,
-      ]),
+      t("{0} linked. Now choose the folders to sync.", [device.name]),
     );
     if (tab.value === "computers" && path.value === "/devices") {
       await load("/devices", true);
@@ -184,8 +182,8 @@ const crumbs = computed(() =>
           label: index
             ? part
             : tab.value === "computers"
-              ? t("Computadores")
-              : t("Meu Drive"),
+              ? t("Computers")
+              : t("My Drive"),
           path: "/" + parts.slice(0, index + 1).join("/"),
         }))
     : [],
@@ -216,13 +214,13 @@ const kind = (entry: RemoteEntry) =>
   entry.kind === "device"
     ? entry.mediaType
     : entry.kind === "album"
-      ? plural("{0} foto", "{0} fotos", entry.photoCount)
+      ? plural("{0} photo", "{0} photos", entry.photoCount)
       : entry.directory
-        ? t("Pasta")
+        ? t("Folder")
         : entry.nativeDocument
-          ? t("Editor Proton · online")
+          ? t("Proton editor · online")
           : entry.mediaType?.startsWith("video/")
-            ? t("Vídeo")
+            ? t("Video")
             : bytes(entry.size);
 watch(search, (value) => {
   clearTimeout(searchTimer);
@@ -381,14 +379,14 @@ async function download() {
     const folder = await open({
       directory: true,
       multiple: false,
-      title: t("Salvar arquivo nesta pasta"),
+      title: t("Save file in this folder"),
     });
     if (typeof folder !== "string") return;
     const saved = await props.command<string>("download_file", {
       path: selected.value.path,
       destination: folder,
     });
-    emit("notify", t("Arquivo salvo em {0}", [saved]));
+    emit("notify", t("File saved to {0}", [saved]));
   } catch (e) {
     previewError.value = String(e);
   } finally {
@@ -405,11 +403,11 @@ function syncCurrent() {
       ? ""
       : albumName.value ||
         (tab.value === "photos"
-          ? t("Minhas fotos")
+          ? t("My photos")
           : tab.value === "albums"
-            ? t("Meus álbuns")
+            ? t("My albums")
             : path.value.split("/").at(-1) === "my-files"
-              ? t("Meu Drive")
+              ? t("My Drive")
               : path.value.split("/").at(-1)),
     remotePath: path.value,
     mode: path.value === "/albums" ? "download" : "bidirectional",
@@ -426,9 +424,9 @@ async function web() {
 <template>
   <div class="page-heading library-heading">
     <div>
-      <div class="eyebrow">{{ t("SUA BIBLIOTECA") }}</div>
-      <h1>{{ t("Tudo o que é seu. Aqui.") }}</h1>
-      <p>{{ t("Documentos, memórias e projetos, em um só lugar.") }}</p>
+      <div class="eyebrow">{{ t("YOUR LIBRARY") }}</div>
+      <h1>{{ t("Everything that's yours. Here.") }}</h1>
+      <p>{{ t("Documents, memories and projects, all in one place.") }}</p>
     </div>
     <button
       class="btn btn-primary"
@@ -436,27 +434,21 @@ async function web() {
       @click="libraryConfigured ? emit('manage') : emit('full')"
     >
       <AppIcon name="HardDrive" :size="18" />
-      {{
-        libraryConfigured ? t("Ver sincronizações") : t("Configurar biblioteca")
-      }}
+      {{ libraryConfigured ? t("View syncs") : t("Configure library") }}
     </button>
   </div>
   <div class="library-intro">
     <span class="library-emblem"><AppIcon name="Cloud" :size="29" /></span>
     <div>
-      <strong> {{ t("Seu Drive, mais perto.") }} </strong>
-      <p>{{ t("Navegue pela nuvem ou mantenha uma cópia no computador.") }}</p>
+      <strong> {{ t("Your Drive, closer.") }} </strong>
+      <p>{{ t("Browse the cloud or keep a copy on your computer.") }}</p>
     </div>
     <button class="btn btn-sm btn-ghost" :disabled="!native" @click="web">
-      {{ t("Abrir versão web") }} <AppIcon name="ArrowUpRight" :size="17" />
+      {{ t("Open web version") }} <AppIcon name="ArrowUpRight" :size="17" />
     </button>
   </div>
   <section class="surface library-surface">
-    <div
-      class="library-tabs"
-      role="tablist"
-      :aria-label="t('Biblioteca do Drive')"
-    >
+    <div class="library-tabs" role="tablist" :aria-label="t('Drive library')">
       <button
         v-for="item in tabs"
         :id="`tab-${item.id}`"
@@ -477,12 +469,12 @@ async function web() {
         ><AppIcon name="Search" :size="18" /><input
           v-model="search"
           type="search"
-          :aria-label="t('Buscar na biblioteca')"
-          :placeholder="t('Buscar nesta visualização…')"
+          :aria-label="t('Search library')"
+          :placeholder="t('Search this view…')"
       /></label>
       <button
         class="btn btn-ghost btn-square btn-sm"
-        :aria-label="t('Atualizar biblioteca')"
+        :aria-label="t('Refresh library')"
         :disabled="loading || !connected"
         @click="load(path, true)"
       >
@@ -504,17 +496,17 @@ async function web() {
       >
         <AppIcon name="RefreshCw" :size="16" />{{
           configuredPair
-            ? t("Ver sincronização")
+            ? t("View sync")
             : computerRoot
-              ? t("Adicionar pasta deste PC")
+              ? t("Add a folder from this PC")
               : tab === "albums" && path === "/albums"
-                ? t("Sincronizar álbuns")
-                : t("Sincronizar aqui")
+                ? t("Sync albums")
+                : t("Sync here")
         }}
       </button>
     </div>
     <div class="library-location">
-      <nav v-if="crumbs.length" :aria-label="t('Caminho no Drive')">
+      <nav v-if="crumbs.length" :aria-label="t('Path in Drive')">
         <template v-for="(crumb, i) in crumbs" :key="crumb.path"
           ><AppIcon v-if="i" name="ChevronRight" :size="14" /><button
             :aria-current="i === crumbs.length - 1 ? 'page' : undefined"
@@ -525,7 +517,7 @@ async function web() {
           </button></template
         >
       </nav>
-      <nav v-else-if="albumName" :aria-label="t('Álbum')">
+      <nav v-else-if="albumName" :aria-label="t('Album')">
         <button
           :disabled="loading"
           @click="
@@ -533,18 +525,18 @@ async function web() {
             load('/albums');
           "
         >
-          {{ t("Álbuns") }}</button
+          {{ t("Albums") }}</button
         ><AppIcon name="ChevronRight" :size="14" /><span>{{ albumName }}</span>
       </nav>
       <span v-else>{{
         tab === "documents"
-          ? t("Documentos em todas as pastas")
+          ? t("Documents across all folders")
           : tab === "photos"
-            ? t("Todas as fotos e vídeos")
-            : t("Seus álbuns")
+            ? t("All photos and videos")
+            : t("Your albums")
       }}</span>
       <span v-if="connected && !loading">{{
-        plural("{0} item", "{0} itens", filtered.length)
+        plural("{0} item", "{0} items", filtered.length)
       }}</span>
     </div>
     <div
@@ -554,29 +546,22 @@ async function web() {
     >
       <span class="loading loading-spinner loading-sm" />
       <div>
-        <strong>{{ t("Atualizando em segundo plano") }}</strong>
+        <strong>{{ t("Updating in the background") }}</strong>
         <p v-if="tab === 'documents'">
           {{
-            t(
-              "{0} pastas verificadas · {1} documentos · {2} pastas pendentes",
-              [
-                view?.foldersDone ?? 0,
-                entries.length,
-                view?.foldersPending ?? 0,
-              ],
-            )
+            t("{0} folders checked · {1} documents · {2} folders pending", [
+              view?.foldersDone ?? 0,
+              entries.length,
+              view?.foldersPending ?? 0,
+            ])
           }}
         </p>
         <p v-else>
-          {{
-            t(
-              "Você pode continuar navegando enquanto a biblioteca é atualizada.",
-            )
-          }}
+          {{ t("You can keep browsing while the library updates.") }}
         </p>
       </div>
       <button class="btn btn-ghost btn-sm" @click="emit('queue')">
-        {{ t("Ver fila") }}
+        {{ t("View queue") }}
       </button>
     </div>
     <div
@@ -587,25 +572,25 @@ async function web() {
       <AppIcon name="TriangleAlert" :size="18" />
       <p>{{ message(error) }}</p>
       <button class="btn btn-ghost btn-sm" @click="load(path, true)">
-        {{ t("Tentar novamente") }}
+        {{ t("Try again") }}
       </button>
     </div>
     <p v-if="connected && view?.updatedAt" class="library-cache-time">
       {{
-        t("Biblioteca salva · atualizada em {0}", [
+        t("Saved library · updated {0}", [
           new Intl.DateTimeFormat(locale, {
             dateStyle: "short",
             timeStyle: "short",
           }).format(new Date(view.updatedAt * 1000)),
         ])
-      }}<span v-if="view.partial"> · {{ t("Resultados parciais") }}</span>
+      }}<span v-if="view.partial"> · {{ t("Partial results") }}</span>
     </p>
     <div v-if="tab === 'documents'" class="library-note">
       <AppIcon name="FileText" :size="18" />
       <p>
         {{
           t(
-            "PDFs abrem aqui; arquivos Office podem ser baixados. Docs e Sheets abrem no editor Proton integrado e precisam de internet.",
+            "PDFs open here; Office files can be downloaded. Docs and Sheets open in the integrated Proton editor and require an internet connection.",
           )
         }}
       </p>
@@ -630,8 +615,8 @@ async function web() {
         {{
           t(
             computerRoot && !ownComputerRoot
-              ? "Abra uma pasta deste computador para sincronizar uma cópia no seu PC. Para adicionar novas pastas deste PC, vincule-o na lista de computadores."
-              : "Estas pastas aparecem em Computers no Proton Drive. Alterações locais iniciam a sincronização automaticamente.",
+              ? "Open a folder from this computer to sync a copy to your PC. To add new folders from this PC, link it in the computer list."
+              : "These folders appear in Computers in Proton Drive. Local changes start syncing automatically.",
           )
         }}
       </p>
@@ -647,15 +632,15 @@ async function web() {
         <span class="empty-library-icon"
           ><AppIcon :name="tabs.find((t) => t.id === tab)!.icon" :size="42"
         /></span>
-        <h2>{{ t("Sua biblioteca começa com uma conexão.") }}</h2>
+        <h2>{{ t("Your library starts with a connection.") }}</h2>
         <p>
           {{
             t(
               tab === "albums"
-                ? "Entre com sua conta Proton para ver seus álbuns aqui."
+                ? "Sign in with your Proton account to see your albums here."
                 : tab === "photos"
-                  ? "Entre com sua conta Proton para ver suas fotos aqui."
-                  : "Entre com sua conta Proton para ver seus arquivos aqui.",
+                  ? "Sign in with your Proton account to see your photos here."
+                  : "Sign in with your Proton account to see your files here.",
             )
           }}
         </p>
@@ -664,7 +649,7 @@ async function web() {
           :disabled="!native"
           @click="emit('connect')"
         >
-          <AppIcon name="LogIn" :size="18" /> {{ t("Conectar conta Proton") }}
+          <AppIcon name="LogIn" :size="18" /> {{ t("Connect Proton account") }}
         </button>
       </div>
       <div
@@ -673,12 +658,12 @@ async function web() {
         role="status"
       >
         <span class="loading loading-spinner text-primary loading-lg" />
-        <h2>{{ t("Carregando sua biblioteca…") }}</h2>
+        <h2>{{ t("Loading your library…") }}</h2>
         <p>
           {{
             tab === "documents"
-              ? t("Procurando documentos em todas as pastas.")
-              : t("Lendo e decifrando os metadados no seu computador.")
+              ? t("Looking for documents across all folders.")
+              : t("Reading and decrypting metadata on your computer.")
           }}
         </p>
       </div>
@@ -688,10 +673,10 @@ async function web() {
         role="alert"
       >
         <AppIcon name="TriangleAlert" :size="36" />
-        <h2>{{ t("Não foi possível carregar.") }}</h2>
+        <h2>{{ t("Couldn't load.") }}</h2>
         <p>{{ message(error) }}</p>
         <button class="btn btn-soft" @click="load(path, true)">
-          {{ t("Tentar novamente") }}
+          {{ t("Try again") }}
         </button>
       </div>
       <div v-else-if="!visible.length" class="library-empty">
@@ -699,18 +684,14 @@ async function web() {
           ><AppIcon name="FolderOpen" :size="40"
         /></span>
         <h2>
-          {{
-            search
-              ? t("Nenhum resultado por aqui.")
-              : t("Este espaço ainda está vazio.")
-          }}
+          {{ search ? t("No results here.") : t("This space is still empty.") }}
         </h2>
         <p>
           {{
             search
-              ? t("Tente outro nome de arquivo.")
+              ? t("Try another file name.")
               : t(
-                  "Os itens da sua conta aparecerão aqui assim que forem adicionados.",
+                  "Items from your account will appear here as soon as they are added.",
                 )
           }}
         </p>
@@ -720,7 +701,7 @@ async function web() {
           v-for="(entry, index) in visible"
           :key="entry.path"
           class="media-card"
-          :aria-label="t('Abrir {0}', [entry.name])"
+          :aria-label="t('Open {0}', [entry.name])"
           @click="inspect(entry)"
         >
           <span
@@ -733,8 +714,8 @@ async function web() {
               class="media-cover-label"
               >{{
                 entry.kind === "album"
-                  ? plural("{0} foto", "{0} fotos", entry.photoCount)
-                  : t("Visualizar")
+                  ? plural("{0} photo", "{0} photos", entry.photoCount)
+                  : t("Preview")
               }}</span
             ></span
           >
@@ -748,15 +729,15 @@ async function web() {
         <table class="table library-table">
           <caption class="sr-only">
             {{
-              t("Conteúdo de {0}", [path])
+              t("Contents of {0}", [path])
             }}
           </caption>
           <thead>
             <tr>
-              <th scope="col">{{ t("Nome") }}</th>
-              <th scope="col">{{ t("Tipo / tamanho") }}</th>
+              <th scope="col">{{ t("Name") }}</th>
+              <th scope="col">{{ t("Type / size") }}</th>
               <th scope="col">
-                <span class="sr-only"> {{ t("Ação") }} </span>
+                <span class="sr-only"> {{ t("Action") }} </span>
               </th>
             </tr>
           </thead>
@@ -779,7 +760,7 @@ async function web() {
                         entry.uid === localComputer?.deviceUid
                       "
                       class="this-pc-label"
-                      >{{ t("Este computador") }}</small
+                      >{{ t("This computer") }}</small
                     ><small v-if="tab === 'documents'">{{
                       entry.path.replace("/my-files/", "")
                     }}</small></span
@@ -790,7 +771,7 @@ async function web() {
               <td>
                 <button
                   class="btn btn-ghost btn-square btn-sm"
-                  :aria-label="t('Abrir {0}', [entry.name])"
+                  :aria-label="t('Open {0}', [entry.name])"
                   @click="inspect(entry)"
                 >
                   <AppIcon
@@ -806,23 +787,23 @@ async function web() {
       <nav
         v-if="pages > 1"
         class="library-pagination"
-        :aria-label="t('Páginas da biblioteca')"
+        :aria-label="t('Library pages')"
       >
         <button
           class="btn btn-sm btn-ghost"
           :disabled="pageNumber <= 1"
           @click="pageNumber--"
         >
-          {{ t("Anterior") }}</button
+          {{ t("Previous") }}</button
         ><span role="status">{{
-          t("Página {0} de {1}", [pageNumber, pages])
+          t("Page {0} of {1}", [pageNumber, pages])
         }}</span
         ><button
           class="btn btn-sm btn-ghost"
           :disabled="pageNumber >= pages"
           @click="pageNumber++"
         >
-          {{ t("Próxima") }}
+          {{ t("Next") }}
         </button>
       </nav>
     </div>
@@ -831,7 +812,7 @@ async function web() {
     <AppIcon name="ShieldCheck" :size="15" />
     {{
       t(
-        "Pré-visualizações são baixadas ao abrir. Seu conteúdo é decifrado apenas neste computador.",
+        "Previews are downloaded when opened. Your content is decrypted only on this computer.",
       )
     }}
   </p>
@@ -849,15 +830,13 @@ async function web() {
       <div class="preview-heading">
         <div>
           <span class="eyebrow">{{
-            selected?.nativeDocument
-              ? t("EDITOR ONLINE")
-              : t("PRÉ-VISUALIZAÇÃO")
+            selected?.nativeDocument ? t("ONLINE EDITOR") : t("PREVIEW")
           }}</span>
           <h2 id="preview-title">{{ selected?.name }}</h2>
         </div>
         <button
           class="btn btn-ghost btn-square btn-sm"
-          :aria-label="t('Fechar pré-visualização')"
+          :aria-label="t('Close preview')"
           @click="previewDialog?.close()"
         >
           <AppIcon name="X" />
@@ -865,20 +844,20 @@ async function web() {
       </div>
       <div v-if="previewLoading" class="preview-placeholder" role="status">
         <span class="loading loading-spinner loading-lg" />
-        <p>{{ t("Preparando arquivo…") }}</p>
+        <p>{{ t("Preparing file…") }}</p>
       </div>
       <div v-else-if="selected?.nativeDocument" class="preview-placeholder">
         <AppIcon name="FileText" :size="54" />
-        <h3>{{ t("Continue no editor Proton.") }}</h3>
+        <h3>{{ t("Continue in the Proton editor.") }}</h3>
         <p>
           {{
             t(
-              "Abra e edite este documento na janela integrada. O conteúdo nativo não pode ser sincronizado offline pelo CLI.",
+              "Open and edit this document in the integrated window. Native content cannot be synced offline by the CLI.",
             )
           }}
         </p>
         <button class="btn btn-primary" @click="openDocument">
-          {{ t("Abrir documento") }} <AppIcon name="ArrowUpRight" :size="18" />
+          {{ t("Open document") }} <AppIcon name="ArrowUpRight" :size="18" />
         </button>
       </div>
       <img
@@ -896,11 +875,11 @@ async function web() {
       }}</pre>
       <div v-else-if="preview?.kind === 'external'" class="preview-placeholder">
         <AppIcon name="FileText" :size="52" />
-        <h3>{{ t("Abra no seu aplicativo preferido.") }}</h3>
+        <h3>{{ t("Open in your preferred app.") }}</h3>
         <p>
           {{
             t(
-              "Baixe este arquivo para visualizar documentos Office, vídeos e outros formatos no computador.",
+              "Download this file to view Office documents, videos and other formats on your computer.",
             )
           }}
         </p>
@@ -920,13 +899,13 @@ async function web() {
             v-if="downloading"
             class="loading loading-spinner loading-xs"
           /><AppIcon v-else name="CloudDownload" :size="17" />{{
-            downloading ? t("Baixando…") : t("Baixar arquivo")
+            downloading ? t("Downloading…") : t("Download file")
           }}
         </button>
       </div>
     </div>
     <form method="dialog" class="modal-backdrop">
-      <button :aria-label="t('Fechar')">{{ t("Fechar") }}</button>
+      <button :aria-label="t('Close')">{{ t("Close") }}</button>
     </form>
   </dialog>
 </template>

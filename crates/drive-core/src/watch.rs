@@ -192,7 +192,7 @@ impl LocalMonitor {
             // Drop before registering again, freeing native watch descriptors.
             self.roots.remove(&pair.id);
             let (handle, error) = if identity.is_none() {
-                (None, Some("Pasta indisponível ou substituída por um link simbólico. O monitor será retomado quando a pasta voltar.".into()))
+                (None, Some("Folder unavailable or replaced by a symbolic link. Watching will resume when the folder returns.".into()))
             } else {
                 self.watch(pair, &root, failed.is_some())
             };
@@ -262,8 +262,8 @@ impl LocalMonitor {
             watcher.watch(root, RecursiveMode::Recursive)?;
             Ok(watcher)
         }) {
-            Ok(watcher) => (Some(Box::new(watcher)), Some("Monitor nativo indisponível; alterações locais serão verificadas automaticamente a cada 2 segundos.".into())),
-            Err(error) => (None, Some(crate::i18n::message("Não foi possível monitorar a pasta ({0}). A verificação periódica continua ativa.", &[crate::i18n::nested(error.to_string())]))),
+            Ok(watcher) => (Some(Box::new(watcher)), Some("Native watcher unavailable; local changes will be checked automatically every 2 seconds.".into())),
+            Err(error) => (None, Some(crate::i18n::message("Couldn't watch the folder ({0}). Periodic checks remain active.", &[crate::i18n::nested(error.to_string())]))),
         }
     }
 }

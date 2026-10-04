@@ -9,7 +9,7 @@ use std::{
     path::{Component, Path, PathBuf},
 };
 
-pub const UNAVAILABLE: &str = "Pasta local indisponível. A recuperação será tentada automaticamente quando o local voltar a estar disponível.";
+pub const UNAVAILABLE: &str = "Local folder unavailable. Recovery will retry automatically when the location is available again.";
 #[derive(Clone, Serialize, Deserialize)]
 struct Identity {
     device: u64,
@@ -74,17 +74,17 @@ impl LocalRoot {
 
 fn validate_components(path: &Path) -> Result<()> {
     if !path.is_absolute() || path.parent().is_none() {
-        return Err("Pasta local inválida.".into());
+        return Err("Invalid local folder.".into());
     }
     let mut current = PathBuf::new();
     for part in path.components() {
         match part {
             Component::RootDir | Component::Normal(_) => current.push(part),
-            _ => return Err("Pasta local inválida.".into()),
+            _ => return Err("Invalid local folder.".into()),
         }
         match fs::symlink_metadata(&current) {
             Ok(meta) if meta.file_type().is_symlink() => {
-                return Err("Links simbólicos não são sincronizados.".into())
+                return Err("Symbolic links are not synced.".into())
             }
             Ok(meta) if !meta.is_dir() => return Err(UNAVAILABLE.into()),
             Err(e) if e.kind() != ErrorKind::NotFound => return Err(UNAVAILABLE.into()),
@@ -191,7 +191,7 @@ fn prepare_with(
     let mut changed = false;
     let mut journal: Journal = match fs::read(&state) {
         Ok(bytes) => serde_json::from_slice(&bytes)
-            .map_err(|_| "Registro de recuperação inválido; histórico preservado.".to_string())?,
+            .map_err(|_| "Invalid recovery record; history preserved.".to_string())?,
         Err(e) if e.kind() == ErrorKind::NotFound => {
             let anchor = anchor_for(path, home, mounts, configured)?;
             changed = true;

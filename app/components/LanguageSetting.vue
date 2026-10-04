@@ -11,15 +11,15 @@ defineEmits<{ change: [locale: Locale] }>();
   >
     <div class="settings-heading">
       <AppIcon name="Languages" :size="21" />
-      <h2 id="language-heading">{{ t("Idioma") }}</h2>
+      <h2 id="language-heading">{{ t("Language") }}</h2>
     </div>
     <div class="setting-row">
       <div>
         <label class="font-semibold" for="app-language">{{
-          t("Idioma do aplicativo")
+          t("App language")
         }}</label>
         <p id="language-help">
-          {{ t("A mudança é imediata e fica salva neste computador.") }}
+          {{ t("Changes apply immediately and are saved on this computer.") }}
         </p>
       </div>
       <select

@@ -3,7 +3,7 @@
 export async function readFolderBatch(sdk, paths, input) {
   const requests = JSON.parse(input);
   if (!Array.isArray(requests) || requests.length < 1 || requests.length > 4)
-    throw new Error("Lote de metadados inválido.");
+    throw new Error("Invalid metadata batch.");
   for (const request of requests) {
     if (
       !request ||
@@ -16,7 +16,7 @@ export async function readFolderBatch(sdk, paths, input) {
           !request.uid ||
           request.uid.length > 512))
     )
-      throw new Error("Lote de metadados inválido.");
+      throw new Error("Invalid metadata batch.");
   }
   return Promise.all(
     requests.map(async ({ path, uid }) => {
@@ -25,7 +25,7 @@ export async function readFolderBatch(sdk, paths, input) {
       for await (const node of sdk.iterateFolderChildren(parent)) {
         if (entries.length >= 100000)
           throw new Error(
-            "A pasta excede o limite de 100 níveis ou 100.000 itens.",
+            "Folder exceeds the limit of 100 levels or 100,000 items.",
           );
         entries.push(node);
       }

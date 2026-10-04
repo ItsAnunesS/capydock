@@ -33,10 +33,10 @@ const waiting = computed(() =>
 );
 const laneLabel = (item: Operation) =>
   ({
-    transfer: t("Transferências e alterações"),
-    interactive: t("Navegação"),
-    background: t("Índice em segundo plano"),
-    exclusive: t("Manutenção da sessão"),
+    transfer: t("Transfers and changes"),
+    interactive: t("Browsing"),
+    background: t("Background index"),
+    exclusive: t("Session maintenance"),
   })[item.lane];
 const history = computed(() =>
   props.queue.items
@@ -58,20 +58,20 @@ function elapsed(since: number) {
   return seconds < 60
     ? t("{0}s", [seconds])
     : seconds < 3600
-      ? t("{0}min {1}s", [Math.floor(seconds / 60), seconds % 60])
-      : t("{0}h {1}min", [
+      ? t("{0}m {1}s", [Math.floor(seconds / 60), seconds % 60])
+      : t("{0}h {1}m", [
           Math.floor(seconds / 3600),
           Math.floor((seconds % 3600) / 60),
         ]);
 }
 const label = (item: Operation) =>
   ({
-    completed: t("Concluída"),
-    failed: t("Falhou"),
-    cancelled: t("Cancelada"),
-    queued: t("Na fila"),
-    running: t("Em execução"),
-    cancelling: t("Parando…"),
+    completed: t("Completed operation"),
+    failed: t("Failed"),
+    cancelled: t("Cancelled"),
+    queued: t("Queued"),
+    running: t("Running"),
+    cancelling: t("Stopping…"),
   })[item.status];
 </script>
 
@@ -80,7 +80,7 @@ const label = (item: Operation) =>
     v-if="compact"
     class="queue-summary"
     @click="$emit('open')"
-    :aria-label="t('Ver fila de operações: {0} aguardando', [waiting.length])"
+    :aria-label="t('View operation queue: {0} waiting', [waiting.length])"
   >
     <span class="queue-summary-icon"
       ><AppIcon
@@ -91,32 +91,32 @@ const label = (item: Operation) =>
     <span class="queue-summary-copy"
       ><strong>{{
         queue.paused
-          ? t("Fila pausada")
+          ? t("Queue paused")
           : running
             ? message(running.title)
-            : t("Fila de operações")
+            : t("Operation queue")
       }}</strong
       ><span>{{
         running
           ? message(running.detail)
-          : t("Acompanhe suas transferências e outras operações")
+          : t("Follow your transfers and other operations")
       }}</span></span
     >
     <span class="queue-count"
-      >{{ number(waiting.length) }} {{ t("na fila") }} </span
+      >{{ number(waiting.length) }} {{ t("queued") }} </span
     ><span class="queue-summary-link">
-      {{ t("Ver fila") }} <AppIcon name="ChevronRight" :size="16"
+      {{ t("View queue") }} <AppIcon name="ChevronRight" :size="16"
     /></span>
   </button>
   <section v-else class="queue-page" aria-labelledby="queue-title">
     <div class="page-heading">
       <div>
-        <div class="eyebrow">{{ t("TUDO EM SEU TEMPO") }}</div>
-        <h1 id="queue-title">{{ t("Fila de operações") }}</h1>
+        <div class="eyebrow">{{ t("ONE STEP AT A TIME") }}</div>
+        <h1 id="queue-title">{{ t("Operation queue") }}</h1>
         <p>
           {{
             t(
-              "Navegação e indexação têm filas próprias. As alterações de arquivos continuam protegidas.",
+              "Browsing and indexing have their own queues. File changes remain protected.",
             )
           }}
         </p>
@@ -128,7 +128,7 @@ const label = (item: Operation) =>
         @click="$emit('pause', !queue.paused)"
       >
         <AppIcon :name="queue.paused ? 'Play' : 'Pause'" :size="17" />{{
-          queue.paused ? t("Retomar fila") : t("Pausar fila")
+          queue.paused ? t("Resume queue") : t("Pause queue")
         }}
       </button>
     </div>
@@ -137,7 +137,7 @@ const label = (item: Operation) =>
       <p>
         {{
           t(
-            "Fila pausada. As operações em andamento podem terminar; as próximas aguardam.",
+            "Queue paused. Active operations can finish; upcoming operations will wait.",
           )
         }}
       </p>
@@ -146,7 +146,7 @@ const label = (item: Operation) =>
       <section class="surface queue-running" aria-labelledby="running-title">
         <div class="queue-section-heading">
           <h2 id="running-title">
-            {{ t("Em execução") }}
+            {{ t("Running") }}
             <span class="count-badge">{{ number(active.length) }}</span>
           </h2>
           <span class="queue-live-dot" :class="{ active: running }" />
@@ -168,7 +168,7 @@ const label = (item: Operation) =>
             <span class="queue-status" role="status"
               >{{ label(running)
               }}<span v-if="running.automatic">
-                {{ t("· Automática") }}
+                {{ t("· Automatic") }}
               </span></span
             >
             <h3>{{ message(running.title) }}</h3>
@@ -179,13 +179,13 @@ const label = (item: Operation) =>
               class="queue-progress"
               :class="{ stopping: running.status === 'cancelling' }"
               role="progressbar"
-              :aria-label="t('Operação em andamento')"
+              :aria-label="t('Operation in progress')"
             >
               <span />
             </div>
             <div class="queue-running-footer">
               <span>
-                {{ t("Em execução há") }}
+                {{ t("Running for") }}
                 {{ elapsed(running.startedAt ?? running.createdAt) }}</span
               ><button
                 v-if="running.canCancelRunning"
@@ -195,18 +195,16 @@ const label = (item: Operation) =>
               >
                 {{
                   running.status === "cancelling"
-                    ? t("Parando com segurança…")
+                    ? t("Stopping safely…")
                     : ["interactive", "background"].includes(running.lane)
-                      ? t("Cancelar consulta")
-                      : t("Parar após este arquivo")
+                      ? t("Cancel request")
+                      : t("Stop after this file")
                 }}
               </button>
             </div>
             <p v-if="!running.canCancelRunning" class="queue-fine-print">
               {{
-                t(
-                  "Esta operação será concluída com segurança antes da próxima alteração.",
-                )
+                t("This operation will finish safely before the next change.")
               }}
             </p>
           </article>
@@ -216,15 +214,15 @@ const label = (item: Operation) =>
           <h3>
             {{
               queue.paused
-                ? t("Tudo pronto para continuar.")
-                : t("Nenhuma operação em execução.")
+                ? t("Ready to continue.")
+                : t("No operation running.")
             }}
           </h3>
           <p>
             {{
               queue.paused
-                ? t("Retome a fila quando quiser.")
-                : t("As próximas operações aparecem aqui assim que começarem.")
+                ? t("Resume the queue whenever you like.")
+                : t("Upcoming operations appear here as soon as they start.")
             }}
           </p>
         </div>
@@ -232,15 +230,15 @@ const label = (item: Operation) =>
       <section class="surface queue-waiting" aria-labelledby="waiting-title">
         <div class="queue-section-heading">
           <h2 id="waiting-title">
-            {{ t("Na fila") }}
+            {{ t("Queued") }}
             <span class="count-badge">{{ number(waiting.length) }}</span>
           </h2>
-          <span> {{ t("Prioridade e ordem de chegada") }} </span>
+          <span> {{ t("Priority and arrival order") }} </span>
         </div>
         <ol
           v-if="waiting.length"
           class="queue-list"
-          :aria-label="t('Operações aguardando')"
+          :aria-label="t('Waiting operations')"
         >
           <li v-for="(item, index) in waiting" :key="item.id">
             <span class="queue-position">{{ number(index + 1) }}</span>
@@ -249,13 +247,13 @@ const label = (item: Operation) =>
               <p :title="message(item.detail)">{{ message(item.detail) }}</p>
               <span
                 >{{ laneLabel(item) }} ·
-                {{ item.automatic ? t("Automática · ") : "" }}
-                {{ t("Aguardando há") }} {{ elapsed(item.createdAt) }}</span
+                {{ item.automatic ? t("Automatic · ") : "" }}
+                {{ t("Waiting for") }} {{ elapsed(item.createdAt) }}</span
               >
             </div>
             <button
               class="btn btn-ghost btn-square btn-sm"
-              :aria-label="t('Cancelar {0}', [message(item.title)])"
+              :aria-label="t('Cancel {0}', [message(item.title)])"
               @click="$emit('cancel', item.id)"
             >
               <AppIcon name="X" :size="17" />
@@ -264,11 +262,11 @@ const label = (item: Operation) =>
         </ol>
         <div v-else class="queue-idle small">
           <AppIcon name="ListOrdered" :size="30" />
-          <h3>{{ t("Nenhuma operação esperando.") }}</h3>
+          <h3>{{ t("No operations waiting.") }}</h3>
           <p>
             {{
               t(
-                "Você pode abrir arquivos, baixar e solicitar novas sincronizações mesmo durante uma transferência.",
+                "You can open files, download and request new syncs even during a transfer.",
               )
             }}
           </p>
@@ -281,9 +279,9 @@ const label = (item: Operation) =>
       aria-labelledby="queue-history-title"
     >
       <div class="queue-section-heading">
-        <h2 id="queue-history-title">{{ t("Finalizadas nesta sessão") }}</h2>
+        <h2 id="queue-history-title">{{ t("Finished this session") }}</h2>
         <button class="btn btn-ghost btn-sm" @click="$emit('clear')">
-          {{ t("Limpar histórico") }}
+          {{ t("Clear history") }}
         </button>
       </div>
       <ul class="queue-list">
@@ -314,7 +312,7 @@ const label = (item: Operation) =>
     <p class="queue-session-note">
       {{
         t(
-          "A fila pertence a esta sessão do aplicativo. A sincronização automática volta a comparar suas pastas ao reabrir.",
+          "The queue belongs to this app session. Automatic sync compares your folders again when you reopen the app.",
         )
       }}
     </p>

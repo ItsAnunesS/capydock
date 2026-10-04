@@ -46,12 +46,12 @@ async function chooseLocal() {
     const path = await open({
       directory: true,
       multiple: false,
-      title: t("Escolha a pasta para sincronizar"),
+      title: t("Choose the folder to sync"),
     });
     if (typeof path === "string") {
       localPath.value = path;
       if (!name.value)
-        name.value = path.split("/").filter(Boolean).at(-1) ?? t("Minha pasta");
+        name.value = path.split("/").filter(Boolean).at(-1) ?? t("My folder");
     }
   } catch (e) {
     error.value = String(e);
@@ -128,41 +128,38 @@ async function save() {
         <div class="folder-icon"><AppIcon name="FolderPlus" :size="24" /></div>
         <button
           class="btn btn-ghost btn-square btn-sm"
-          :aria-label="t('Fechar')"
+          :aria-label="t('Close')"
           @click="dialog?.close()"
         >
           <AppIcon name="X" />
         </button>
       </div>
       <h2 id="pair-dialog-title">
-        {{
-          pair ? t("Editar sincronização") : t("Um lugar para cada arquivo.")
-        }}
+        {{ pair ? t("Edit sync") : t("A place for every file.") }}
       </h2>
       <p class="dialog-subtitle">
-        {{ t("Conecte uma pasta do computador ao seu Proton Drive.") }}
+        {{ t("Connect a folder on your computer to your Proton Drive.") }}
       </p>
       <form @submit.prevent="save">
-        <label class="field-label" for="pair-name">
-          {{ t("Nome da sincronização") }} </label
+        <label class="field-label" for="pair-name"> {{ t("Sync name") }} </label
         ><input
           id="pair-name"
           v-model="name"
           class="input w-full"
           maxlength="120"
-          :placeholder="t('Ex.: Documentos de trabalho')"
+          :placeholder="t('E.g. Work documents')"
           required
           autofocus
         />
         <label class="field-label" for="local-path">
-          {{ t("No computador") }}
+          {{ t("On your computer") }}
         </label>
         <div class="input-with-button">
           <input
             id="local-path"
             v-model="localPath"
             class="input w-full"
-            :placeholder="t('/home/voce/Documentos')"
+            :placeholder="t('/home/you/Documents')"
             :readonly="!!pair"
             required
           /><button
@@ -171,17 +168,17 @@ async function save() {
             :disabled="!!pair"
             @click="chooseLocal"
           >
-            <AppIcon name="FolderOpen" :size="17" /> {{ t("Escolher") }}
+            <AppIcon name="FolderOpen" :size="17" /> {{ t("Choose") }}
           </button>
         </div>
         <label class="field-label" for="remote-path">
-          {{ t("No Proton Drive") }}
+          {{ t("In Proton Drive") }}
         </label>
         <div
           v-if="!pair && !isPhotos"
           class="destination-tabs"
           role="group"
-          :aria-label="t('Destino no Proton Drive')"
+          :aria-label="t('Destination in Proton Drive')"
         >
           <button
             type="button"
@@ -195,7 +192,7 @@ async function save() {
               browse('/my-files');
             "
           >
-            <AppIcon name="Cloud" :size="16" /> {{ t("Meus arquivos") }}
+            <AppIcon name="Cloud" :size="16" /> {{ t("My files") }}
           </button>
           <button
             type="button"
@@ -206,7 +203,7 @@ async function save() {
             :disabled="busy"
             @click="browse('/devices')"
           >
-            <AppIcon name="Monitor" :size="16" /> {{ t("Computadores") }}
+            <AppIcon name="Monitor" :size="16" /> {{ t("Computers") }}
           </button>
         </div>
         <div class="input-with-button">
@@ -222,7 +219,7 @@ async function save() {
             :disabled="!!pair || busy || isPhotos"
             @click="browse(remotePath)"
           >
-            <AppIcon name="Cloud" :size="17" /> {{ t("Explorar") }}
+            <AppIcon name="Cloud" :size="17" /> {{ t("Browse") }}
           </button>
         </div>
         <div v-if="browsing" class="folder-browser">
@@ -231,7 +228,7 @@ async function save() {
               type="button"
               class="btn btn-ghost btn-square btn-xs"
               :disabled="['/my-files', '/devices'].includes(browsePath) || busy"
-              :aria-label="t('Pasta anterior')"
+              :aria-label="t('Parent folder')"
               @click="browse(browsePath.slice(0, browsePath.lastIndexOf('/')))"
             >
               <AppIcon name="ArrowLeft" :size="16" /></button
@@ -245,7 +242,7 @@ async function save() {
                 browsing = false;
               "
             >
-              {{ t("Usar esta pasta") }}
+              {{ t("Use this folder") }}
             </button>
           </div>
           <div class="folder-list">
@@ -263,9 +260,9 @@ async function save() {
               {{
                 browsePath === "/devices"
                   ? t(
-                      "Registre este PC em Meu Drive → Computadores para começar.",
+                      "Register this PC in My Drive → Computers to get started.",
                     )
-                  : t("Nenhuma subpasta aqui.")
+                  : t("No subfolders here.")
               }}
             </p>
           </div>
@@ -273,28 +270,28 @@ async function save() {
             <input
               v-model="newFolder"
               class="input input-sm"
-              :placeholder="t('Nome da nova pasta')"
-              :aria-label="t('Nome da nova pasta no Drive')"
+              :placeholder="t('New folder name')"
+              :aria-label="t('New folder name in Drive')"
             /><button
               type="button"
               class="btn btn-sm btn-ghost"
               :disabled="busy || !newFolder.trim()"
               @click="createFolder"
             >
-              <AppIcon name="Plus" :size="16" /> {{ t("Criar") }}
+              <AppIcon name="Plus" :size="16" /> {{ t("Create") }}
             </button>
           </div>
         </div>
         <p v-if="computerRoot" class="dialog-subtitle">
           {{
-            t("Será criada a pasta {0} dentro de {1} em Computers.", [
-              name || t("nome da sincronização"),
+            t("The folder {0} will be created inside {1} in Computers.", [
+              name || t("sync name"),
               computerRoot.split("/").at(-1),
             ])
           }}
         </p>
         <label class="field-label" for="sync-mode">
-          {{ t("Como sincronizar") }} </label
+          {{ t("How to sync") }} </label
         ><select
           id="sync-mode"
           v-model="mode"
@@ -302,11 +299,11 @@ async function save() {
           :disabled="remotePath === '/albums'"
         >
           <option value="bidirectional">
-            {{ t("Nos dois sentidos · computador ↔ Drive") }}
+            {{ t("Both ways · computer ↔ Drive") }}
           </option>
-          <option value="upload">{{ t("Enviar · computador → Drive") }}</option>
+          <option value="upload">{{ t("Upload · computer → Drive") }}</option>
           <option value="download">
-            {{ t("Receber · Drive → computador") }}
+            {{ t("Download · Drive → computer") }}
           </option>
         </select>
         <div class="safety-note">
@@ -314,24 +311,24 @@ async function save() {
           <p>
             {{
               t(
-                "No computador, criar ou editar arquivos inicia a sincronização automaticamente após cerca de 2 segundos sem novas alterações.",
+                "On your computer, creating or editing files starts syncing automatically after about 2 seconds without new changes.",
               )
             }}
           </p>
         </div>
         <label class="field-label" for="sync-interval">
-          {{ t("Buscar mudanças no Drive a cada") }} </label
+          {{ t("Check for changes in Drive every") }} </label
         ><select
           id="sync-interval"
           v-model="intervalMinutes"
           class="select w-full"
         >
-          <option :value="1">{{ t("1 minuto") }}</option>
-          <option :value="5">{{ t("5 minutos") }}</option>
-          <option :value="15">{{ t("15 minutos") }}</option>
-          <option :value="30">{{ t("30 minutos") }}</option>
-          <option :value="60">{{ t("1 hora") }}</option>
-          <option :value="1440">{{ t("24 horas") }}</option>
+          <option :value="1">{{ t("1 minute") }}</option>
+          <option :value="5">{{ t("5 minutes") }}</option>
+          <option :value="15">{{ t("15 minutes") }}</option>
+          <option :value="30">{{ t("30 minutes") }}</option>
+          <option :value="60">{{ t("1 hour") }}</option>
+          <option :value="1440">{{ t("24 hours") }}</option>
         </select>
         <label v-if="!isPhotos" class="deletion-option"
           ><input
@@ -339,11 +336,11 @@ async function save() {
             type="checkbox"
             class="checkbox checkbox-sm checkbox-primary"
           /><span
-            ><strong> {{ t("Propagar exclusões") }} </strong
+            ><strong> {{ t("Propagate deletions") }} </strong
             ><small>
               {{
                 t(
-                  "Usa a lixeira do Drive e a pasta local de recuperação. Só remove cópias que não mudaram desde a última sincronização.",
+                  "Uses Drive trash and the local recovery folder. Only removes copies that haven't changed since the last sync.",
                 )
               }}
             </small></span
@@ -355,10 +352,10 @@ async function save() {
             {{
               isPhotos
                 ? t(
-                    "Fotos novas podem ser enviadas; edições e exclusões de originais são preservadas para revisão. Todos os álbuns usam cópia contínua para o PC.",
+                    "New photos can be uploaded; edits and deletions of originals are preserved for review. All albums use a continuous copy to your PC.",
                   )
                 : t(
-                    "Conflitos preservam as duas cópias. Docs e Sheets ficam disponíveis no editor online; os demais arquivos são sincronizados.",
+                    "Conflicts preserve both copies. Docs and Sheets remain available in the online editor; other files are synced.",
                   )
             }}
           </p>
@@ -366,7 +363,7 @@ async function save() {
         <p v-if="error" class="form-error" role="alert">{{ message(error) }}</p>
         <div class="modal-action">
           <button type="button" class="btn btn-ghost" @click="dialog?.close()">
-            {{ t("Cancelar") }}</button
+            {{ t("Cancel") }}</button
           ><button
             class="btn btn-primary"
             :disabled="busy || !name.trim() || !localPath"
@@ -375,14 +372,14 @@ async function save() {
               v-if="busy"
               class="loading loading-spinner loading-xs"
             /><AppIcon v-else name="Check" :size="17" />{{
-              pair ? t("Salvar alterações") : t("Conectar pasta")
+              pair ? t("Save changes") : t("Connect folder")
             }}
           </button>
         </div>
       </form>
     </div>
     <form method="dialog" class="modal-backdrop">
-      <button :aria-label="t('Fechar janela')">{{ t("Fechar") }}</button>
+      <button :aria-label="t('Close window')">{{ t("Close") }}</button>
     </form>
   </dialog>
 </template>

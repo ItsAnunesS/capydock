@@ -222,11 +222,11 @@ async fn cancellation_never_starts_a_transfer() {
 #[tokio::test]
 async fn folder_picker_filters_files_at_the_cli() {
     let f = Fixture::new(SyncMode::Bidirectional);
-    fs::create_dir(f.remote.join("Documentos")).unwrap();
+    fs::create_dir(f.remote.join("Documents")).unwrap();
     fs::write(f.remote.join("file.txt"), "content").unwrap();
     let folders = f.cli.folders("/my-files").await.unwrap();
     assert_eq!(folders.len(), 1);
-    assert_eq!(folders[0].name, "Documentos");
+    assert_eq!(folders[0].name, "Documents");
     assert!(folders[0].directory);
 }
 
@@ -433,12 +433,12 @@ async fn ignored_children_and_root_symlinks_block_automatic_removal() {
     f.run().await.unwrap();
     fs::remove_dir_all(f.local.join("folder")).unwrap();
     fs::create_dir(f.remote.join("folder/.git")).unwrap();
-    assert!(f.run().await.unwrap_err().contains("ignorados"));
+    assert!(f.run().await.unwrap_err().contains("ignored"));
     assert!(f.remote.join("folder/a.txt").exists());
     let alternate = f._root.path().join("alternate");
     fs::rename(&f.local, &alternate).unwrap();
     std::os::unix::fs::symlink(&alternate, &f.local).unwrap();
-    assert!(f.run().await.unwrap_err().contains("simbólico"));
+    assert!(f.run().await.unwrap_err().contains("Symbolic"));
 }
 
 async fn wait_for_local_change(
@@ -635,7 +635,11 @@ async fn computers_sync_both_directions_and_bind_to_device_identity() {
     replacement["uid"] = "different-pc".into();
     fs::write(&devices, serde_json::to_vec(&vec![replacement]).unwrap()).unwrap();
     fs::write(f.local.join("private.txt"), "local only").unwrap();
-    assert!(f.run().await.unwrap_err().contains("destino mudou"));
+    assert!(f
+        .run()
+        .await
+        .unwrap_err()
+        .contains("destination computer changed"));
     assert!(!folder.join("private.txt").exists());
     // The virtual device collection and device roots cannot be trashed.
     assert!(f.cli.trash("/devices").await.is_err());

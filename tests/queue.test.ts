@@ -10,7 +10,7 @@ const job = (id: string, status: Operation["status"]): Operation => ({
   status,
   lane: "transfer",
   kind: "sync",
-  title: encodeMessage("Sincronizar {0}", [id]),
+  title: encodeMessage("Sync {0}", [id]),
   detail: `Documentos/${id}.pdf`,
   pairId: id,
   automatic: false,
@@ -56,7 +56,7 @@ describe("operation queue", () => {
             job("A", "running"),
             job("B", "queued"),
             job("C", "queued"),
-            { ...job("D", "failed"), error: "Sem conexão" },
+            { ...job("D", "failed"), error: "No connection" },
           ],
         },
       },
@@ -69,7 +69,7 @@ describe("operation queue", () => {
       expect.stringContaining("Sync B"),
       expect.stringContaining("Sync C"),
     ]);
-    expect(wrapper.get(".queue-history").text()).toContain("Sem conexão");
+    expect(wrapper.get(".queue-history").text()).toContain("No connection");
     await wrapper.get('[aria-label="Cancel Sync C"]').trigger("click");
     expect(wrapper.emitted("cancel")).toEqual([["C"]]);
     await wrapper
