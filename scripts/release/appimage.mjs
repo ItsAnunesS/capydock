@@ -230,6 +230,10 @@ export async function findAppImage(cwd = process.cwd()) {
 }
 
 export async function verifyAppImage(path, cwd = process.cwd()) {
+  // CI needs this flag to run the bundling tools without FUSE. The runtime
+  // handles it before metadata flags, which would launch the GUI during checks.
+  const inspectionEnv = { ...process.env };
+  delete inspectionEnv.APPIMAGE_EXTRACT_AND_RUN;
   const file = await open(path, "r");
   const header = Buffer.alloc(11);
   try {
@@ -245,6 +249,7 @@ export async function verifyAppImage(path, cwd = process.cwd()) {
   const info = execFileSync(path, ["--appimage-updateinformation"], {
     encoding: "utf8",
     timeout: 10_000,
+    env: inspectionEnv,
   }).trim();
   if (info !== updateInformation(releaseRepository(cwd)))
     throw new Error(
@@ -267,6 +272,7 @@ export async function verifyAppImage(path, cwd = process.cwd()) {
         cwd: directory,
         stdio: ["ignore", "ignore", "pipe"],
         timeout: 120_000,
+        env: inspectionEnv,
       });
     await verifyDesktopMetadata(
       resolve(directory, "squashfs-root"),
